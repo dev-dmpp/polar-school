@@ -20,7 +20,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     queEs:
       'pwd significa "print working directory" (imprimir directorio de trabajo). Te dice EXACTAMENTE en qué carpeta estás parado. Es tu primer comando cuando te pierdes en la terminal.',
     cuando:
-      'Cuando entras a una terminal nueva y no sabes dónde estás. O cuando navegaste por varias carpetas y quieres confirmar en qué punto estás.',
+      'Cuando entras a una terminal nueva y no sabes dónde estás. O cuando navegas por varias carpetas y quieres confirmar en qué punto estás.',
     ejemplo: '$ pwd\n/home/polar/proyectos',
     tip:
       'La terminal siempre arranca en tu "home" (/home/TU_USUARIO). Si te pierdes, `cd ~` te lleva de vuelta ahí.',
@@ -245,7 +245,7 @@ const content = CONTENT[lesson.slug]
     </section>
 
     <section class="block tryit-block">
-      <h2>Probálo</h2>
+      <h2>Pruébalo</h2>
       <p>Ejecuta los comandos en esta terminal simulada. Escribe los tuyos también.</p>
       <TryIt client:load initialCommands={content.tryit} />
     </section>
