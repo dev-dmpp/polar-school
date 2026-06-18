@@ -20,7 +20,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     queEs:
       'pwd significa "print working directory" (imprimir directorio de trabajo). Te dice EXACTAMENTE en qué carpeta estás parado. Es tu primer comando cuando te perdés en la terminal.',
     cuando:
-      'Cuando entrás a una terminal nueva y no sabés dónde estás. O cuando navegaste por varias carpetas y querés confirmar en qué punto estás.',
+      'Cuando entras a una terminal nueva y no sabes dónde estás. O cuando navegaste por varias carpetas y quieres confirmar en qué punto estás.',
     ejemplo: '$ pwd\n/home/polar/proyectos',
     tip:
       'La terminal siempre arranca en tu "home" (/home/TU_USUARIO). Si te perdés, `cd ~` te lleva de vuelta ahí.',
@@ -50,7 +50,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     queEs:
       'mkdir (make directory) crea una carpeta nueva. Con `-p` crea toda la cadena de carpetas necesarias (ej: `mkdir -p a/b/c` crea las tres).',
     cuando:
-      'Cuando necesitás organizar archivos en una estructura nueva. Antes de empezar un proyecto, primero creás la estructura de carpetas.',
+      'Cuando necesitas organizar archivos en una estructura nueva. Antes de empezar un proyecto, primero creas la estructura de carpetas.',
     ejemplo: '$ mkdir mi-proyecto\n$ mkdir -p docs/imgs\n$ ls -la docs/',
     tip:
       'Si intentás crear una carpeta donde ya existe, da error. Con `-p` es idempotente: si ya existe, no pasa nada.',
@@ -60,27 +60,27 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     queEs:
       'touch crea un archivo VACÍO. Si el archivo ya existe, le actualiza la fecha de modificación (lo "toca") sin cambiar el contenido.',
     cuando:
-      'Para crear archivos placeholder, o para forzar a un programa a releer un archivo (porque mirás la fecha de modificación).',
+      'Para crear archivos placeholder, o para forzar a un programa a releer un archivo (porque miras la fecha de modificación).',
     ejemplo: '$ touch notas.md\n$ ls -l notas.md\n-rw-r--r-- 1 polar polar 0 jun 18 10:30 notas.md',
     tip:
-      'El archivo arranca con 0 bytes. Para que tenga contenido, usá un editor (nano, vim) o redirigí algo con `echo "hola" > notas.md`.',
+      'El archivo arranca con 0 bytes. Para que tenga contenido, usa un editor (nano, vim) o redirige algo con `echo "hola" > notas.md`.',
     tryit: ['ls', 'touch test.md', 'ls -l', 'echo "contenido" > test.md', 'cat test.md'],
   },
   '06-cat': {
     queEs:
       'cat (concatenate) muestra TODO el contenido de un archivo de una. Para archivos largos, es incómodo. Para archivos cortos, es perfecto.',
     cuando:
-      'Para archivos de configuración chicos, scripts cortos, o cuando querés ver todo de una.',
+      'Para archivos de configuración chicos, scripts cortos, o cuando quieres ver todo de una.',
     ejemplo: '$ cat README.md\n# Bienvenido a Polar School\n\nEste es un simulador de Linux.',
     tip:
-      'Para archivos largos, usá `less archivo.md` en su lugar. Para ver el FINAL de un log que se actualiza: `tail -f archivo.log`.',
+      'Para archivos largos, usa `less archivo.md` en su lugar. Para ver el FINAL de un log que se actualiza: `tail -f archivo.log`.',
     tryit: ['cat README.md', 'cat notas.txt'],
   },
   '07-less': {
     queEs:
       'less es un paginador: te muestra un archivo largo pantalla por pantalla. Apretás espacio para avanzar, / para buscar, q para salir.',
     cuando:
-      'Cuando cat te tira todo de una y no podés leer. Archivos de configuración grandes, logs, código fuente.',
+      'Cuando cat te tira todo de una y no puedes leer. Archivos de configuración grandes, logs, código fuente.',
     ejemplo: '$ less /var/log/syslog',
     tip:
       'Trucos dentro de less: `/palabra` busca, `n` va a la siguiente coincidencia, `g` va al principio, `G` al final, `q` sale.',
@@ -93,7 +93,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
       'Backups antes de editar algo importante. Duplicar archivos para experimentar. Copiar archivos entre carpetas.',
     ejemplo: '$ cp README.md README.backup\n$ cp -r proyectos/ proyectos-backup/',
     tip:
-      'cp NO pregunta si querés sobreescribir un archivo existente. Para que pregunte, usá `cp -i`. Para forzar overwrite silencioso, `cp -f`.',
+      'cp NO pregunta si quieres sobreescribir un archivo existente. Para que pregunte, usa `cp -i`. Para forzar overwrite silencioso, `cp -f`.',
     tryit: ['ls', 'cp README.md README-copia.md', 'ls', 'cat README-copia.md'],
   },
   '09-mv': {
@@ -110,10 +110,10 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     queEs:
       'rm (remove) borra archivos o directorios. Es IRREVERSIBLE: no hay papelera. Con `-r` borra recursivamente, con `-f` fuerza sin preguntar.',
     cuando:
-      'Para limpiar archivos que ya no necesitás. Con EXTREMO cuidado en archivos importantes.',
+      'Para limpiar archivos que ya no necesitas. Con EXTREMO cuidado en archivos importantes.',
     ejemplo: '$ rm apuntes.md\n$ rm -rf directorio-viejo/',
     tip:
-      'CUIDADO: rm no tiene undo. Si hacés `rm -rf /` (como root), borrás todo el sistema. NUNCA uses rm con sudo sin pensar dos veces.',
+      'CUIDADO: rm no tiene undo. Si haces `rm -rf /` (como root), borras todo el sistema. NUNCA uses rm con sudo sin pensar dos veces.',
     tryit: ['ls', 'rm notas.txt', 'ls', 'mkdir temporal', 'touch temporal/borrame.txt', 'rm -rf temporal', 'ls'],
   },
   '11-echo': {
@@ -133,14 +133,14 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
       'Para guardar el resultado de un comando en un archivo. Para construir logs. Para crear scripts rápido.',
     ejemplo: '$ echo "mi primer log" > app.log\n$ echo "segunda línea" >> app.log\n$ cat app.log',
     tip:
-      '`>` sobreescribe sin preguntar. Si querés que pregunte, usá `>|` o activá `set -o noclobber` en bash.',
+      '`>` sobreescribe sin preguntar. Si quieres que pregunte, usa `>|` o activa `set -o noclobber` en bash.',
     tryit: ['echo "primera línea" > log.txt', 'echo "segunda" >> log.txt', 'cat log.txt'],
   },
   '13-pipe': {
     queEs:
       'El pipe `|` conecta dos comandos: la SALIDA del primero se convierte en la ENTRADA del segundo. Es lo que hace la terminal poderosa.',
     cuando:
-      'Cuando querés filtrar, transformar, o combinar la salida de un comando. Casi todos los workflows largos involucran pipes.',
+      'Cuando quieres filtrar, transformar, o combinar la salida de un comando. Casi todos los workflows largos involucran pipes.',
     ejemplo: '$ ls -la | grep ".md"\n$ cat archivo.txt | wc -l  # cuenta líneas',
     tip:
       'Podés encadenar cuantos pipes quieras: `cat archivo | grep palabra | sort | uniq | head`. Cada uno transforma la salida.',
@@ -150,7 +150,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     queEs:
       'grep busca un PATRÓN de texto en archivos o en la entrada que reciba por pipe. Imprime solo las líneas que coincidan.',
     cuando:
-      'Cuando necesitás buscar una palabra en un archivo grande. O filtrar la salida de otro comando.',
+      'Cuando necesitas buscar una palabra en un archivo grande. O filtrar la salida de otro comando.',
     ejemplo: '$ grep "error" /var/log/syslog\n$ ls -la | grep ".md"',
     tip:
       'Opciones útiles: `grep -i` ignora mayúsculas, `grep -r` busca recursivo en carpetas, `grep -n` muestra el número de línea.',
@@ -160,7 +160,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     queEs:
       'find busca archivos en una jerarquía de carpetas. Podés buscar por nombre, tamaño, fecha, tipo, permisos, dueño.',
     cuando:
-      'Cuando no sabés DÓNDE está un archivo. O cuando querés aplicar una acción a un grupo de archivos.',
+      'Cuando no sabes DÓNDE está un archivo. O cuando quieres aplicar una acción a un grupo de archivos.',
     ejemplo: '$ find . -name "*.md"\n$ find /var/log -size +1M\n$ find . -mtime -7  # modificados en últimos 7 días',
     tip:
       '`find` puede ejecutar un comando sobre cada resultado: `find . -name "*.tmp" -delete`. Reemplaza loops en bash.',
@@ -170,7 +170,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     queEs:
       'chmod (change mode) cambia los PERMISOS de un archivo: quién puede leer (r), escribir (w), ejecutar (x). Tres grupos: dueño (u), grupo (g), otros (o).',
     cuando:
-      'Cuando un script no se ejecuta, cuando querés hacer un archivo privado, cuando deployás una web.',
+      'Cuando un script no se ejecuta, cuando quieres hacer un archivo privado, cuando deployás una web.',
     ejemplo: '$ chmod +x script.sh   # hacerlo ejecutable\n$ chmod 644 archivo.txt  # rw-r--r--\n$ chmod 755 carpeta/     # rwxr-xr-x',
     tip:
       'El modo numérico (644, 755) se lee en binario: r=4, w=2, x=1. 7=4+2+1=rwx, 5=4+1=r-x. Cada dígito es para dueño/grupo/otros.',
@@ -178,9 +178,9 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
   },
   '17-sudo': {
     queEs:
-      'sudo ("superuser do") ejecuta un comando como ROOT (administrador). Lo necesitás para instalar paquetes, modificar archivos del sistema, abrir puertos.',
+      'sudo ("superuser do") ejecuta un comando como ROOT (administrador). Lo necesitas para instalar paquetes, modificar archivos del sistema, abrir puertos.',
     cuando:
-      'Cualquier acción que toque el sistema: `apt install`, editar `/etc/hosts`, reiniciar servicios. Si te dice "Permission denied", probablemente necesitás sudo.',
+      'Cualquier acción que toque el sistema: `apt install`, editar `/etc/hosts`, reiniciar servicios. Si te dice "Permission denied", probablemente necesitas sudo.',
     ejemplo: '$ sudo apt update\n$ sudo systemctl restart nginx\n$ sudo !!  # re-ejecuta el último comando con sudo',
     tip:
       '`sudo !!` es oro: si olvidaste poner sudo en el último comando, esto lo re-ejecuta con sudo. Aprendételo.',
@@ -190,7 +190,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     queEs:
       'ps (process status) muestra los procesos que están corriendo. Sin argumentos te da los tuyos en la terminal actual. Con `aux` te da TODOS los del sistema.',
     cuando:
-      'Para ver qué programas están corriendo. Para encontrar el PID de algo que querés matar.',
+      'Para ver qué programas están corriendo. Para encontrar el PID de algo que quieres matar.',
     ejemplo: '$ ps aux | head\n  PID TTY          TIME CMD\n    1 ?        00:00:01 systemd\n  142 ?        00:00:00 sshd',
     tip:
       'Combinado con grep es muy poderoso: `ps aux | grep nginx` te muestra solo los procesos de nginx.',
@@ -198,9 +198,9 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
   },
   '19-kill': {
     queEs:
-      'kill envía una SEÑAL a un proceso. Por defecto le pide que termine amablemente (SIGTERM). Si no responde, usá SIGKILL (kill -9 PID).',
+      'kill envía una SEÑAL a un proceso. Por defecto le pide que termine amablemente (SIGTERM). Si no responde, usa SIGKILL (kill -9 PID).',
     cuando:
-      'Cuando un programa se colgó. Cuando necesitás liberar un puerto. Cuando un servicio no responde.',
+      'Cuando un programa se colgó. Cuando necesitas liberar un puerto. Cuando un servicio no responde.',
     ejemplo: '$ kill 1234         # PID 1234, amable\n$ kill -9 1234       # forzado, no queda otra\n$ killall nginx       # mata todos los nginx',
     tip:
       'Antes de hacer kill -9, intentá kill normal (sin -9). El proceso puede capturar la señal y guardar estado. Con -9 no hay oportunidad.',
@@ -235,7 +235,7 @@ const content = CONTENT[lesson.slug]
     </section>
 
     <section class="block">
-      <h2>¿Cuándo lo usás?</h2>
+      <h2>¿Cuándo lo usas?</h2>
       <p>{content.cuando}</p>
     </section>
 

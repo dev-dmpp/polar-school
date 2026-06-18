@@ -3,7 +3,7 @@ import type { Course } from '../types'
 export const linuxBasico: Course = {
   meta: {
     slug: 'linux-basico',
-    title: 'Linux desde cero — los 20 comandos que necesitás',
+    title: 'Linux desde cero — los 20 comandos que necesitas',
     description:
       'Aprende Linux desde lo más básico: navegación, archivos, permisos y procesos. Sin instalar nada, todo desde el navegador. En español, con práctica real.',
     level: 'basico',
@@ -158,7 +158,7 @@ export const linuxBasico: Course = {
     {
       slug: '17-sudo',
       title: 'sudo — Ejecutar como administrador',
-      description: 'Hacé cosas que requieren permisos especiales.',
+      description: 'Haz cosas que requieren permisos especiales.',
       command: 'sudo',
       difficulty: 'intermedio',
       category: 'permisos',
@@ -185,7 +185,7 @@ export const linuxBasico: Course = {
     {
       slug: '20-man',
       title: 'man — El manual de cualquier comando',
-      description: 'Cómo aprender CUALQUIER comando nuevo vos mismo.',
+      description: 'Cómo aprender CUALQUIER comando nuevo tú mismo.',
       command: 'man',
       difficulty: 'basico',
       category: 'navegacion',
