@@ -16,8 +16,8 @@
   let historyIdx = $state(-1)
   let inputEl: HTMLInputElement | undefined = $state()
 
-  const WELCOME = `Simulador de Linux — escribí un comando y apretá Enter.
-Probá: ls, pwd, cd proyectos, cat README.md, help`
+  const WELCOME = `Simulador de Linux — escribe un comando y pulsa Enter.
+Prueba: ls, pwd, cd proyectos, cat README.md, help`
 
   onMount(() => {
     sim = createSimulator()

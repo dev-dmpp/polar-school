@@ -18,12 +18,12 @@ const next = idx < linuxBasico.lessons.length - 1 ? linuxBasico.lessons[idx + 1]
 const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; tip: string; tryit: string[] }> = {
   '01-pwd': {
     queEs:
-      'pwd significa "print working directory" (imprimir directorio de trabajo). Te dice EXACTAMENTE en qué carpeta estás parado. Es tu primer comando cuando te perdés en la terminal.',
+      'pwd significa "print working directory" (imprimir directorio de trabajo). Te dice EXACTAMENTE en qué carpeta estás parado. Es tu primer comando cuando te pierdes en la terminal.',
     cuando:
       'Cuando entras a una terminal nueva y no sabes dónde estás. O cuando navegaste por varias carpetas y quieres confirmar en qué punto estás.',
     ejemplo: '$ pwd\n/home/polar/proyectos',
     tip:
-      'La terminal siempre arranca en tu "home" (/home/TU_USUARIO). Si te perdés, `cd ~` te lleva de vuelta ahí.',
+      'La terminal siempre arranca en tu "home" (/home/TU_USUARIO). Si te pierdes, `cd ~` te lleva de vuelta ahí.',
     tryit: ['pwd', 'cd proyectos', 'pwd', 'cd ..', 'pwd'],
   },
   '02-ls': {
@@ -33,17 +33,17 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
       'Para ver qué hay en una carpeta antes de hacer cualquier cosa. Combinado con `cd`, es tu forma de "mirar" el filesystem.',
     ejemplo: '$ ls -la\ndrwxr-xr-x 5 polar polar 4096 jun 18 10:00 .\ndrwxr-xr-x 3 root  root  4096 jun 18 09:50 ..\n-rw-r--r-- 1 polar polar  127 jun 18 10:00 README.md',
     tip:
-      'Los archivos que empiezan con punto (`.bashrc`, `.gitignore`) son OCULTOS. ls normal no los muestra. Usá `ls -a` para verlos.',
+      'Los archivos que empiezan con punto (`.bashrc`, `.gitignore`) son OCULTOS. ls normal no los muestra. Usa `ls -a` para verlos.',
     tryit: ['ls', 'ls -l', 'ls -a', 'ls -la'],
   },
   '03-cd': {
     queEs:
-      'cd (change directory) te mueve entre carpetas. Sin argumentos te lleva a tu home. Con `..` subís un nivel. Con `-` volvés a donde estabas antes.',
+      'cd (change directory) te mueve entre carpetas. Sin argumentos te lleva a tu home. Con `..` subes un nivel. Con `-` vuelves a donde estabas antes.',
     cuando:
       'TODO el tiempo. Navegar entre carpetas es la operación más común en la terminal.',
     ejemplo: '$ cd proyectos\n$ pwd\n/home/polar/proyectos\n$ cd ..\n$ pwd\n/home/polar',
     tip:
-      'Truco: escribí las primeras letras de una carpeta y apretá TAB. La terminal autocompleta. Si hay ambigüedad, apretá TAB dos veces para ver opciones.',
+      'Truco: escribe las primeras letras de una carpeta y pulsa TAB. La terminal autocompleta. Si hay ambigüedad, pulsa TAB dos veces para ver opciones.',
     tryit: ['pwd', 'cd proyectos', 'pwd', 'ls', 'cd ..', 'pwd', 'cd ~', 'pwd'],
   },
   '04-mkdir': {
@@ -53,7 +53,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
       'Cuando necesitas organizar archivos en una estructura nueva. Antes de empezar un proyecto, primero creas la estructura de carpetas.',
     ejemplo: '$ mkdir mi-proyecto\n$ mkdir -p docs/imgs\n$ ls -la docs/',
     tip:
-      'Si intentás crear una carpeta donde ya existe, da error. Con `-p` es idempotente: si ya existe, no pasa nada.',
+      'Si intentas crear una carpeta donde ya existe, da error. Con `-p` es idempotente: si ya existe, no pasa nada.',
     tryit: ['ls', 'mkdir nuevo-dir', 'ls', 'cd nuevo-dir', 'pwd'],
   },
   '05-touch': {
@@ -78,7 +78,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
   },
   '07-less': {
     queEs:
-      'less es un paginador: te muestra un archivo largo pantalla por pantalla. Apretás espacio para avanzar, / para buscar, q para salir.',
+      'less es un paginador: te muestra un archivo largo pantalla por pantalla. Pulsa espacio para avanzar, / para buscar, q para salir.',
     cuando:
       'Cuando cat te tira todo de una y no puedes leer. Archivos de configuración grandes, logs, código fuente.',
     ejemplo: '$ less /var/log/syslog',
@@ -143,7 +143,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
       'Cuando quieres filtrar, transformar, o combinar la salida de un comando. Casi todos los workflows largos involucran pipes.',
     ejemplo: '$ ls -la | grep ".md"\n$ cat archivo.txt | wc -l  # cuenta líneas',
     tip:
-      'Podés encadenar cuantos pipes quieras: `cat archivo | grep palabra | sort | uniq | head`. Cada uno transforma la salida.',
+      'Puedes encadenar cuantos pipes quieras: `cat archivo | grep palabra | sort | uniq | head`. Cada uno transforma la salida.',
     tryit: ['ls /var/log', 'cat /var/log/syslog | grep "systemd"'],
   },
   '14-grep': {
@@ -158,7 +158,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
   },
   '15-find': {
     queEs:
-      'find busca archivos en una jerarquía de carpetas. Podés buscar por nombre, tamaño, fecha, tipo, permisos, dueño.',
+      'find busca archivos en una jerarquía de carpetas. Puedes buscar por nombre, tamaño, fecha, tipo, permisos, dueño.',
     cuando:
       'Cuando no sabes DÓNDE está un archivo. O cuando quieres aplicar una acción a un grupo de archivos.',
     ejemplo: '$ find . -name "*.md"\n$ find /var/log -size +1M\n$ find . -mtime -7  # modificados en últimos 7 días',
@@ -170,7 +170,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     queEs:
       'chmod (change mode) cambia los PERMISOS de un archivo: quién puede leer (r), escribir (w), ejecutar (x). Tres grupos: dueño (u), grupo (g), otros (o).',
     cuando:
-      'Cuando un script no se ejecuta, cuando quieres hacer un archivo privado, cuando deployás una web.',
+      'Cuando un script no se ejecuta, cuando quieres hacer un archivo privado, cuando despliegas una web.',
     ejemplo: '$ chmod +x script.sh   # hacerlo ejecutable\n$ chmod 644 archivo.txt  # rw-r--r--\n$ chmod 755 carpeta/     # rwxr-xr-x',
     tip:
       'El modo numérico (644, 755) se lee en binario: r=4, w=2, x=1. 7=4+2+1=rwx, 5=4+1=r-x. Cada dígito es para dueño/grupo/otros.',
@@ -203,14 +203,14 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
       'Cuando un programa se colgó. Cuando necesitas liberar un puerto. Cuando un servicio no responde.',
     ejemplo: '$ kill 1234         # PID 1234, amable\n$ kill -9 1234       # forzado, no queda otra\n$ killall nginx       # mata todos los nginx',
     tip:
-      'Antes de hacer kill -9, intentá kill normal (sin -9). El proceso puede capturar la señal y guardar estado. Con -9 no hay oportunidad.',
+      'Antes de hacer kill -9, intenta kill normal (sin -9). El proceso puede capturar la señal y guardar estado. Con -9 no hay oportunidad.',
     tryit: ['ps', 'kill 0'],
   },
   '20-man': {
     queEs:
       'man (manual) te muestra la documentación completa de cualquier comando. Es la mejor forma de aprender un comando nuevo: `man comando`.',
     cuando:
-      'SIEMPRE que necesites aprender un comando nuevo, o cuando un comando tiene una opción que no recordás. Antes de Stack Overflow, leé el man.',
+      'SIEMPRE que necesites aprender un comando nuevo, o cuando un comando tiene una opción que no recuerdas. Antes de Stack Overflow, lee el man.',
     ejemplo: '$ man find\n$ man grep\n$ man bash',
     tip:
       'Atajos dentro de man: `/palabra` busca, `n` siguiente, `q` sale. También existen las "cheats" con `-h` o `--help` para resúmenes rápidos.',
@@ -246,7 +246,7 @@ const content = CONTENT[lesson.slug]
 
     <section class="block tryit-block">
       <h2>Probálo</h2>
-      <p>Ejecutá los comandos en esta terminal simulada. Escribí los tuyos también.</p>
+      <p>Ejecuta los comandos en esta terminal simulada. Escribe los tuyos también.</p>
       <TryIt client:load initialCommands={content.tryit} />
     </section>
 

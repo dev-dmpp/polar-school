@@ -42,7 +42,7 @@ function createInitialFS(): FSNode {
               'README.md': {
                 type: 'file',
                 content:
-                  '# Bienvenido a Polar School\n\nEste es un simulador de Linux. Probá los comandos de la lección sin miedo — no podés romper nada. Tu sesión se resetea al recargar la página.\n',
+                  '# Bienvenido a Polar School\n\nEste es un simulador de Linux. Prueba los comandos de la lección sin miedo — no puedes romper nada. Tu sesión se resetea al recargar la página.\n',
                 mode: 0o644,
                 mtime: now,
                 owner: 'polar',
@@ -493,10 +493,10 @@ function kill(_ctx: SimContext, args: string[]): SimResult {
 }
 
 function man(_ctx: SimContext, args: string[]): SimResult {
-  if (args.length === 0) return err('¿Qué página de manual querés?')
+  if (args.length === 0) return err('¿Qué página de manual quieres?')
   const cmd = args[0]
   return ok(
-    `${cmd.toUpperCase()}(1)                 Manual del usuario                 ${cmd.toUpperCase()}(1)\n\nNOMBRE\n       ${cmd} - comando simulado del simulador Polar School\n\nDESCRIPCIÓN\n       Esta es una versión simulada. Para ver el manual real, abrí una terminal\n       Linux real y escribí 'man ${cmd}'.\n`
+    `${cmd.toUpperCase()}(1)                 Manual del usuario                 ${cmd.toUpperCase()}(1)\n\nNOMBRE\n       ${cmd} - comando simulado del simulador Polar School\n\nDESCRIPCIÓN\n       Esta es una versión simulada. Para ver el manual real, abre una terminal\n       Linux real y escribe 'man ${cmd}'.\n`
   )
 }
 
@@ -545,7 +545,7 @@ export function createSimulator() {
       if (!handler) {
         return {
           stdout: '',
-          stderr: `${cmd}: comando no encontrado. Probá 'help'.`,
+          stderr: `${cmd}: comando no encontrado. Prueba 'help'.`,
           exitCode: 127,
           durationMs: performance.now() - start,
         }

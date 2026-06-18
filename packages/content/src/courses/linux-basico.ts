@@ -41,7 +41,7 @@ export const linuxBasico: Course = {
     {
       slug: '04-mkdir',
       title: 'mkdir — Crear directorios',
-      description: 'Creá carpetas nuevas.',
+      description: 'Crea carpetas nuevas.',
       command: 'mkdir',
       difficulty: 'basico',
       category: 'archivos',
@@ -50,7 +50,7 @@ export const linuxBasico: Course = {
     {
       slug: '05-touch',
       title: 'touch — Crear archivos vacíos',
-      description: 'Creá un archivo vacío o actualizá la fecha de uno existente.',
+      description: 'Crea un archivo vacío o actualiza la fecha de uno existente.',
       command: 'touch',
       difficulty: 'basico',
       category: 'archivos',
@@ -59,7 +59,7 @@ export const linuxBasico: Course = {
     {
       slug: '06-cat',
       title: 'cat — Ver contenido de un archivo',
-      description: 'Mostrá todo el contenido de un archivo de texto en la terminal.',
+      description: 'Muestra todo el contenido de un archivo de texto en la terminal.',
       command: 'cat',
       difficulty: 'basico',
       category: 'texto',
@@ -68,7 +68,7 @@ export const linuxBasico: Course = {
     {
       slug: '07-less',
       title: 'less — Leer archivos grandes',
-      description: 'Cuando cat no alcanza. Navegá archivos largos con scroll.',
+      description: 'Cuando cat no alcanza. Navega archivos largos con scroll.',
       command: 'less',
       difficulty: 'basico',
       category: 'texto',
@@ -77,7 +77,7 @@ export const linuxBasico: Course = {
     {
       slug: '08-cp',
       title: 'cp — Copiar archivos',
-      description: 'Copiá un archivo o directorio a otra ubicación.',
+      description: 'Copia un archivo o directorio a otra ubicación.',
       command: 'cp',
       difficulty: 'basico',
       category: 'archivos',
@@ -86,7 +86,7 @@ export const linuxBasico: Course = {
     {
       slug: '09-mv',
       title: 'mv — Mover y renombrar',
-      description: 'Mové archivos o cambialos el nombre.',
+      description: 'Mueve archivos o cámbiales el nombre.',
       command: 'mv',
       difficulty: 'basico',
       category: 'archivos',
@@ -95,7 +95,7 @@ export const linuxBasico: Course = {
     {
       slug: '10-rm',
       title: 'rm — Borrar archivos',
-      description: 'El comando peligroso. Borrá archivos y directorios. Con cuidado.',
+      description: 'El comando peligroso. Borra archivos y directorios. Con cuidado.',
       command: 'rm',
       difficulty: 'basico',
       category: 'archivos',
@@ -104,7 +104,7 @@ export const linuxBasico: Course = {
     {
       slug: '11-echo',
       title: 'echo — Imprimir texto',
-      description: 'Mostrá un mensaje en la terminal o guardalo en un archivo.',
+      description: 'Muestra un mensaje en la terminal o guardalo en un archivo.',
       command: 'echo',
       difficulty: 'basico',
       category: 'texto',
@@ -113,7 +113,7 @@ export const linuxBasico: Course = {
     {
       slug: '12-redirigir',
       title: '> y >> — Redirigir a archivo',
-      description: 'Guardá la salida de un comando en un archivo.',
+      description: 'Guarda la salida de un comando en un archivo.',
       command: 'redirigir',
       difficulty: 'intermedio',
       category: 'texto',
@@ -122,7 +122,7 @@ export const linuxBasico: Course = {
     {
       slug: '13-pipe',
       title: '| — El pipe, conectar comandos',
-      description: 'La herramienta más poderosa: encadená comandos.',
+      description: 'La herramienta más poderosa: encadena comandos.',
       command: 'pipe',
       difficulty: 'intermedio',
       category: 'texto',
@@ -131,7 +131,7 @@ export const linuxBasico: Course = {
     {
       slug: '14-grep',
       title: 'grep — Buscar texto',
-      description: 'Buscá palabras dentro de archivos o salidas.',
+      description: 'Busca palabras dentro de archivos o salidas.',
       command: 'grep',
       difficulty: 'intermedio',
       category: 'texto',
@@ -140,7 +140,7 @@ export const linuxBasico: Course = {
     {
       slug: '15-find',
       title: 'find — Buscar archivos',
-      description: 'Encontrá archivos por nombre, tamaño, fecha o tipo.',
+      description: 'Encuentra archivos por nombre, tamaño, fecha o tipo.',
       command: 'find',
       difficulty: 'intermedio',
       category: 'archivos',
@@ -149,7 +149,7 @@ export const linuxBasico: Course = {
     {
       slug: '16-chmod',
       title: 'chmod — Permisos de archivos',
-      description: 'La parte confusa explicada simple. Cambiá quién puede leer, escribir o ejecutar.',
+      description: 'La parte confusa explicada simple. Cambia quién puede leer, escribir o ejecutar.',
       command: 'chmod',
       difficulty: 'intermedio',
       category: 'permisos',
@@ -176,7 +176,7 @@ export const linuxBasico: Course = {
     {
       slug: '19-kill',
       title: 'kill — Terminar procesos',
-      description: 'Matá un proceso que se colgó o está consumiendo demasiado.',
+      description: 'Mata un proceso que se colgó o está consumiendo demasiado.',
       command: 'kill',
       difficulty: 'intermedio',
       category: 'procesos',
