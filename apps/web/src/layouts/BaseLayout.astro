@@ -1,0 +1,137 @@
+---
+import '../styles/global.css'
+
+interface Props {
+  title: string
+  description?: string
+}
+
+const { title, description = 'Plataforma educativa gratuita en español sobre Linux, Docker, hosting y bases de datos.' } = Astro.props
+const pathname = Astro.url.pathname
+const isActive = (href: string) => pathname === href || (href !== '/' && pathname.startsWith(href))
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#fbf6e9" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Nunito:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <title>{title} · Polar School</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a href="/" class="brand">
+          <span class="brand-mark">⏚</span>
+          <span class="brand-name">Polar School</span>
+        </a>
+        <nav class="nav">
+          <a href="/cursos" class:list={[{ active: isActive('/cursos') }]}>Cursos</a>
+          <a href="/playground" class:list={[{ active: isActive('/playground') }]}>Playground</a>
+          <a href="/donar" class:list={[{ active: isActive('/donar') }]}>Donar</a>
+          <a href="/sobre" class:list={[{ active: isActive('/sobre') }]}>Sobre</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p>
+          Hecho con ☕ por <a href="https://github.com/dev-dmpp">David "Polar" Pollard</a>
+          · Panamá 🇵🇦 para LATAM
+        </p>
+        <p class="footer-meta">
+          <a href="/VISION.md">Visión</a> ·
+          <a href="https://github.com/dev-dmpp/polar-school">GitHub</a> ·
+          CC-BY-SA
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .site-header {
+    background: var(--paper);
+    border-bottom: 2px solid var(--wood);
+    padding: 0.8rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: var(--shadow-sm);
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .brand-mark {
+    font-size: 1.6rem;
+    color: var(--accent);
+  }
+  .brand-name {
+    font-family: var(--font-hand);
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+  .nav {
+    display: flex;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+  }
+  .nav a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.3em 0;
+    border-bottom: 2px solid transparent;
+  }
+  .nav a:hover,
+  .nav a.active {
+    color: var(--accent-dark);
+    border-bottom-color: var(--accent);
+  }
+  .main {
+    min-height: calc(100vh - 180px);
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+  }
+  .site-footer {
+    border-top: 2px solid var(--wood);
+    background: var(--paper-warm);
+    padding: 1.5rem 0;
+    margin-top: 3rem;
+  }
+  .footer-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+  }
+  .footer-meta {
+    font-size: 0.85rem;
+  }
+</style>

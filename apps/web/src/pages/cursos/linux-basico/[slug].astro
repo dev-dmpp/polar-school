@@ -1,0 +1,344 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import { linuxBasico } from '@polar-school/content'
+import { TryIt } from '@polar-school/ui'
+
+export function getStaticPaths() {
+  return linuxBasico.lessons.map((lesson) => ({
+    params: { slug: lesson.slug },
+    props: { lesson },
+  }))
+}
+
+const { lesson } = Astro.props
+const idx = linuxBasico.lessons.findIndex((l) => l.slug === lesson.slug)
+const prev = idx > 0 ? linuxBasico.lessons[idx - 1] : null
+const next = idx < linuxBasico.lessons.length - 1 ? linuxBasico.lessons[idx + 1] : null
+
+const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; tip: string; tryit: string[] }> = {
+  '01-pwd': {
+    queEs:
+      'pwd significa "print working directory" (imprimir directorio de trabajo). Te dice EXACTAMENTE en qué carpeta estás parado. Es tu primer comando cuando te perdés en la terminal.',
+    cuando:
+      'Cuando entrás a una terminal nueva y no sabés dónde estás. O cuando navegaste por varias carpetas y querés confirmar en qué punto estás.',
+    ejemplo: '$ pwd\n/home/polar/proyectos',
+    tip:
+      'La terminal siempre arranca en tu "home" (/home/TU_USUARIO). Si te perdés, `cd ~` te lleva de vuelta ahí.',
+    tryit: ['pwd', 'cd proyectos', 'pwd', 'cd ..', 'pwd'],
+  },
+  '02-ls': {
+    queEs:
+      'ls lista los archivos y carpetas del directorio donde estás. Sin argumentos muestra el nombre. Con -l te da detalles (permisos, dueño, tamaño, fecha). Con -a muestra archivos ocultos.',
+    cuando:
+      'Para ver qué hay en una carpeta antes de hacer cualquier cosa. Combinado con `cd`, es tu forma de "mirar" el filesystem.',
+    ejemplo: '$ ls -la\ndrwxr-xr-x 5 polar polar 4096 jun 18 10:00 .\ndrwxr-xr-x 3 root  root  4096 jun 18 09:50 ..\n-rw-r--r-- 1 polar polar  127 jun 18 10:00 README.md',
+    tip:
+      'Los archivos que empiezan con punto (`.bashrc`, `.gitignore`) son OCULTOS. ls normal no los muestra. Usá `ls -a` para verlos.',
+    tryit: ['ls', 'ls -l', 'ls -a', 'ls -la'],
+  },
+  '03-cd': {
+    queEs:
+      'cd (change directory) te mueve entre carpetas. Sin argumentos te lleva a tu home. Con `..` subís un nivel. Con `-` volvés a donde estabas antes.',
+    cuando:
+      'TODO el tiempo. Navegar entre carpetas es la operación más común en la terminal.',
+    ejemplo: '$ cd proyectos\n$ pwd\n/home/polar/proyectos\n$ cd ..\n$ pwd\n/home/polar',
+    tip:
+      'Truco: escribí las primeras letras de una carpeta y apretá TAB. La terminal autocompleta. Si hay ambigüedad, apretá TAB dos veces para ver opciones.',
+    tryit: ['pwd', 'cd proyectos', 'pwd', 'ls', 'cd ..', 'pwd', 'cd ~', 'pwd'],
+  },
+  '04-mkdir': {
+    queEs:
+      'mkdir (make directory) crea una carpeta nueva. Con `-p` crea toda la cadena de carpetas necesarias (ej: `mkdir -p a/b/c` crea las tres).',
+    cuando:
+      'Cuando necesitás organizar archivos en una estructura nueva. Antes de empezar un proyecto, primero creás la estructura de carpetas.',
+    ejemplo: '$ mkdir mi-proyecto\n$ mkdir -p docs/imgs\n$ ls -la docs/',
+    tip:
+      'Si intentás crear una carpeta donde ya existe, da error. Con `-p` es idempotente: si ya existe, no pasa nada.',
+    tryit: ['ls', 'mkdir nuevo-dir', 'ls', 'cd nuevo-dir', 'pwd'],
+  },
+  '05-touch': {
+    queEs:
+      'touch crea un archivo VACÍO. Si el archivo ya existe, le actualiza la fecha de modificación (lo "toca") sin cambiar el contenido.',
+    cuando:
+      'Para crear archivos placeholder, o para forzar a un programa a releer un archivo (porque mirás la fecha de modificación).',
+    ejemplo: '$ touch notas.md\n$ ls -l notas.md\n-rw-r--r-- 1 polar polar 0 jun 18 10:30 notas.md',
+    tip:
+      'El archivo arranca con 0 bytes. Para que tenga contenido, usá un editor (nano, vim) o redirigí algo con `echo "hola" > notas.md`.',
+    tryit: ['ls', 'touch test.md', 'ls -l', 'echo "contenido" > test.md', 'cat test.md'],
+  },
+  '06-cat': {
+    queEs:
+      'cat (concatenate) muestra TODO el contenido de un archivo de una. Para archivos largos, es incómodo. Para archivos cortos, es perfecto.',
+    cuando:
+      'Para archivos de configuración chicos, scripts cortos, o cuando querés ver todo de una.',
+    ejemplo: '$ cat README.md\n# Bienvenido a Polar School\n\nEste es un simulador de Linux.',
+    tip:
+      'Para archivos largos, usá `less archivo.md` en su lugar. Para ver el FINAL de un log que se actualiza: `tail -f archivo.log`.',
+    tryit: ['cat README.md', 'cat notas.txt'],
+  },
+  '07-less': {
+    queEs:
+      'less es un paginador: te muestra un archivo largo pantalla por pantalla. Apretás espacio para avanzar, / para buscar, q para salir.',
+    cuando:
+      'Cuando cat te tira todo de una y no podés leer. Archivos de configuración grandes, logs, código fuente.',
+    ejemplo: '$ less /var/log/syslog',
+    tip:
+      'Trucos dentro de less: `/palabra` busca, `n` va a la siguiente coincidencia, `g` va al principio, `G` al final, `q` sale.',
+    tryit: ['ls /var/log', 'cat /var/log/syslog', 'man less'],
+  },
+  '08-cp': {
+    queEs:
+      'cp (copy) copia archivos o directorios. Con `-r` copia recursivamente (incluyendo subdirectorios). El original queda intacto.',
+    cuando:
+      'Backups antes de editar algo importante. Duplicar archivos para experimentar. Copiar archivos entre carpetas.',
+    ejemplo: '$ cp README.md README.backup\n$ cp -r proyectos/ proyectos-backup/',
+    tip:
+      'cp NO pregunta si querés sobreescribir un archivo existente. Para que pregunte, usá `cp -i`. Para forzar overwrite silencioso, `cp -f`.',
+    tryit: ['ls', 'cp README.md README-copia.md', 'ls', 'cat README-copia.md'],
+  },
+  '09-mv': {
+    queEs:
+      'mv (move) mueve archivos a otra ubicación O los renombra. Si el destino es la misma carpeta, es un rename. Si es otra carpeta, es un move.',
+    cuando:
+      'Renombrar archivos sin dejar el original. Mover archivos a otra carpeta.',
+    ejemplo: '$ mv notas.txt apuntes.txt\n$ mv apuntes.txt proyectos/',
+    tip:
+      'mv también se usa para RENOMBRAR. A diferencia de cp, NO deja el original. Cuidado.',
+    tryit: ['ls', 'mv notas.txt apuntes.md', 'ls', 'mv apuntes.md proyectos/'],
+  },
+  '10-rm': {
+    queEs:
+      'rm (remove) borra archivos o directorios. Es IRREVERSIBLE: no hay papelera. Con `-r` borra recursivamente, con `-f` fuerza sin preguntar.',
+    cuando:
+      'Para limpiar archivos que ya no necesitás. Con EXTREMO cuidado en archivos importantes.',
+    ejemplo: '$ rm apuntes.md\n$ rm -rf directorio-viejo/',
+    tip:
+      'CUIDADO: rm no tiene undo. Si hacés `rm -rf /` (como root), borrás todo el sistema. NUNCA uses rm con sudo sin pensar dos veces.',
+    tryit: ['ls', 'rm notas.txt', 'ls', 'mkdir temporal', 'touch temporal/borrame.txt', 'rm -rf temporal', 'ls'],
+  },
+  '11-echo': {
+    queEs:
+      'echo imprime texto en la terminal. Útil para ver el valor de una variable, mostrar un mensaje, o combinado con redirección (>) para crear archivos.',
+    cuando:
+      'Para imprimir mensajes en scripts. Para ver variables de entorno (`echo $PATH`). Para crear archivos rápidos.',
+    ejemplo: '$ echo "hola mundo"\nhola mundo\n$ echo $HOME\n/home/polar',
+    tip:
+      '`echo $?` te da el exit code del último comando. 0 = éxito, distinto de 0 = error. Muy útil para debuggear scripts.',
+    tryit: ['echo hola mundo', 'echo $HOME', 'echo $PATH'],
+  },
+  '12-redirigir': {
+    queEs:
+      '`>` redirige la SALIDA de un comando a un archivo (sobreescribiendo). `>>` agrega al final sin sobreescribir.',
+    cuando:
+      'Para guardar el resultado de un comando en un archivo. Para construir logs. Para crear scripts rápido.',
+    ejemplo: '$ echo "mi primer log" > app.log\n$ echo "segunda línea" >> app.log\n$ cat app.log',
+    tip:
+      '`>` sobreescribe sin preguntar. Si querés que pregunte, usá `>|` o activá `set -o noclobber` en bash.',
+    tryit: ['echo "primera línea" > log.txt', 'echo "segunda" >> log.txt', 'cat log.txt'],
+  },
+  '13-pipe': {
+    queEs:
+      'El pipe `|` conecta dos comandos: la SALIDA del primero se convierte en la ENTRADA del segundo. Es lo que hace la terminal poderosa.',
+    cuando:
+      'Cuando querés filtrar, transformar, o combinar la salida de un comando. Casi todos los workflows largos involucran pipes.',
+    ejemplo: '$ ls -la | grep ".md"\n$ cat archivo.txt | wc -l  # cuenta líneas',
+    tip:
+      'Podés encadenar cuantos pipes quieras: `cat archivo | grep palabra | sort | uniq | head`. Cada uno transforma la salida.',
+    tryit: ['ls /var/log', 'cat /var/log/syslog | grep "systemd"'],
+  },
+  '14-grep': {
+    queEs:
+      'grep busca un PATRÓN de texto en archivos o en la entrada que reciba por pipe. Imprime solo las líneas que coincidan.',
+    cuando:
+      'Cuando necesitás buscar una palabra en un archivo grande. O filtrar la salida de otro comando.',
+    ejemplo: '$ grep "error" /var/log/syslog\n$ ls -la | grep ".md"',
+    tip:
+      'Opciones útiles: `grep -i` ignora mayúsculas, `grep -r` busca recursivo en carpetas, `grep -n` muestra el número de línea.',
+    tryit: ['grep "Polar" README.md', 'ls /etc | grep "host"'],
+  },
+  '15-find': {
+    queEs:
+      'find busca archivos en una jerarquía de carpetas. Podés buscar por nombre, tamaño, fecha, tipo, permisos, dueño.',
+    cuando:
+      'Cuando no sabés DÓNDE está un archivo. O cuando querés aplicar una acción a un grupo de archivos.',
+    ejemplo: '$ find . -name "*.md"\n$ find /var/log -size +1M\n$ find . -mtime -7  # modificados en últimos 7 días',
+    tip:
+      '`find` puede ejecutar un comando sobre cada resultado: `find . -name "*.tmp" -delete`. Reemplaza loops en bash.',
+    tryit: ['find . -name "*.md"', 'find /etc -name "host*"'],
+  },
+  '16-chmod': {
+    queEs:
+      'chmod (change mode) cambia los PERMISOS de un archivo: quién puede leer (r), escribir (w), ejecutar (x). Tres grupos: dueño (u), grupo (g), otros (o).',
+    cuando:
+      'Cuando un script no se ejecuta, cuando querés hacer un archivo privado, cuando deployás una web.',
+    ejemplo: '$ chmod +x script.sh   # hacerlo ejecutable\n$ chmod 644 archivo.txt  # rw-r--r--\n$ chmod 755 carpeta/     # rwxr-xr-x',
+    tip:
+      'El modo numérico (644, 755) se lee en binario: r=4, w=2, x=1. 7=4+2+1=rwx, 5=4+1=r-x. Cada dígito es para dueño/grupo/otros.',
+    tryit: ['ls -l README.md', 'chmod 600 README.md', 'ls -l README.md', 'chmod 644 README.md', 'ls -l README.md'],
+  },
+  '17-sudo': {
+    queEs:
+      'sudo ("superuser do") ejecuta un comando como ROOT (administrador). Lo necesitás para instalar paquetes, modificar archivos del sistema, abrir puertos.',
+    cuando:
+      'Cualquier acción que toque el sistema: `apt install`, editar `/etc/hosts`, reiniciar servicios. Si te dice "Permission denied", probablemente necesitás sudo.',
+    ejemplo: '$ sudo apt update\n$ sudo systemctl restart nginx\n$ sudo !!  # re-ejecuta el último comando con sudo',
+    tip:
+      '`sudo !!` es oro: si olvidaste poner sudo en el último comando, esto lo re-ejecuta con sudo. Aprendételo.',
+    tryit: ['whoami'],
+  },
+  '18-ps': {
+    queEs:
+      'ps (process status) muestra los procesos que están corriendo. Sin argumentos te da los tuyos en la terminal actual. Con `aux` te da TODOS los del sistema.',
+    cuando:
+      'Para ver qué programas están corriendo. Para encontrar el PID de algo que querés matar.',
+    ejemplo: '$ ps aux | head\n  PID TTY          TIME CMD\n    1 ?        00:00:01 systemd\n  142 ?        00:00:00 sshd',
+    tip:
+      'Combinado con grep es muy poderoso: `ps aux | grep nginx` te muestra solo los procesos de nginx.',
+    tryit: ['ps', 'ps aux | grep systemd'],
+  },
+  '19-kill': {
+    queEs:
+      'kill envía una SEÑAL a un proceso. Por defecto le pide que termine amablemente (SIGTERM). Si no responde, usá SIGKILL (kill -9 PID).',
+    cuando:
+      'Cuando un programa se colgó. Cuando necesitás liberar un puerto. Cuando un servicio no responde.',
+    ejemplo: '$ kill 1234         # PID 1234, amable\n$ kill -9 1234       # forzado, no queda otra\n$ killall nginx       # mata todos los nginx',
+    tip:
+      'Antes de hacer kill -9, intentá kill normal (sin -9). El proceso puede capturar la señal y guardar estado. Con -9 no hay oportunidad.',
+    tryit: ['ps', 'kill 0'],
+  },
+  '20-man': {
+    queEs:
+      'man (manual) te muestra la documentación completa de cualquier comando. Es la mejor forma de aprender un comando nuevo: `man comando`.',
+    cuando:
+      'SIEMPRE que necesites aprender un comando nuevo, o cuando un comando tiene una opción que no recordás. Antes de Stack Overflow, leé el man.',
+    ejemplo: '$ man find\n$ man grep\n$ man bash',
+    tip:
+      'Atajos dentro de man: `/palabra` busca, `n` siguiente, `q` sale. También existen las "cheats" con `-h` o `--help` para resúmenes rápidos.',
+    tryit: ['man ls', 'help'],
+  },
+}
+
+const content = CONTENT[lesson.slug]
+---
+
+<BaseLayout title={lesson.title}>
+  <article class="lesson">
+    <header>
+      <span class="tag">lección {idx + 1} de {linuxBasico.lessons.length}</span>
+      <h1>{lesson.title}</h1>
+      <p class="lead">{lesson.description}</p>
+    </header>
+
+    <section class="block">
+      <h2>¿Qué es?</h2>
+      <p>{content.queEs}</p>
+    </section>
+
+    <section class="block">
+      <h2>¿Cuándo lo usás?</h2>
+      <p>{content.cuando}</p>
+    </section>
+
+    <section class="block">
+      <h2>Ejemplo</h2>
+      <pre><code>{content.ejemplo}</code></pre>
+    </section>
+
+    <section class="block tryit-block">
+      <h2>Probálo</h2>
+      <p>Ejecutá los comandos en esta terminal simulada. Escribí los tuyos también.</p>
+      <TryIt client:load initialCommands={content.tryit} />
+    </section>
+
+    {content.tip && (
+      <section class="block tip-block">
+        <h2>💡 Tip</h2>
+        <p>{content.tip}</p>
+      </section>
+    )}
+
+    <nav class="lesson-nav">
+      {prev ? (
+        <a href={`/cursos/linux-basico/${prev.slug}`} class="prev">
+          ← {prev.title}
+        </a>
+      ) : <span></span>}
+      {next ? (
+        <a href={`/cursos/linux-basico/${next.slug}`} class="next">
+          {next.title} →
+        </a>
+      ) : <span class="done">🎉 Última lección</span>}
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .lesson {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .lesson header {
+    margin-bottom: 2rem;
+  }
+  .lesson h1 {
+    font-size: 2.4rem;
+    margin: 0.4rem 0 0.8rem;
+  }
+  .lead {
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+  }
+  .block {
+    margin: 2rem 0;
+  }
+  .block h2 {
+    font-size: 1.5rem;
+    color: var(--accent-dark);
+    margin-bottom: 0.6rem;
+  }
+  .tryit-block {
+    background: var(--paper-warm);
+    border: 2px solid var(--wood);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+  .tip-block {
+    background: #fef3d7;
+    border-left: 4px solid var(--accent);
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+  }
+  .tip-block h2 {
+    color: var(--accent-dark);
+    margin-top: 0;
+  }
+  .lesson-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 2px dashed var(--wood);
+  }
+  .lesson-nav a {
+    text-decoration: none;
+    color: var(--accent-dark);
+    font-family: var(--font-hand);
+    font-size: 1.05rem;
+    font-weight: 700;
+    padding: 0.5em 1em;
+    border: 2px solid var(--wood);
+    border-radius: 8px;
+    transition: all 0.15s;
+  }
+  .lesson-nav a:hover {
+    background: var(--wood);
+    color: var(--paper);
+  }
+  .done {
+    font-family: var(--font-hand);
+    font-size: 1.05rem;
+    color: var(--leaf-dark);
+    padding: 0.5em 1em;
+  }
+</style>

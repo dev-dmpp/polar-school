@@ -1,0 +1,96 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+---
+
+<BaseLayout title="Sobre">
+  <article class="sobre">
+    <h1>Sobre Polar School</h1>
+
+    <p class="lead">
+      Una plataforma educativa gratuita en español-latino sobre Linux, Docker, hosting
+      y bases de datos. Hecho en Panamá 🇵🇦, pensado para LATAM.
+    </p>
+
+    <h2>¿Por qué existe?</h2>
+    <p>
+      La infraestructura que hace funcionar la web (servidores, Linux, Docker, sysadmin) casi
+      no se enseña en español. W3Schools enseña web pero no infra. Cisco NetAcad es serio
+      pero en inglés y pesado. Platzi es excelente pero de pago. FreeCodeCamp no toca infra.
+      YouTube tiene tutoriales sueltos pero currículum cero.
+    </p>
+    <p>
+      <strong>El hueco:</strong> nadie enseña infra en español con currículum estructurado,
+      práctica real, y precios accesibles para LATAM. Polar School intenta llenar ese hueco.
+    </p>
+
+    <h2>La filosofía</h2>
+    <ul>
+      <li><strong>El conocimiento es gratis, siempre.</strong> Sin paywalls sobre contenido.</li>
+      <li><strong>Práctica real, no simulada.</strong> Terminal real, comandos reales, errores reales.</li>
+      <li><strong>En español, primero.</strong> Sin traducciones robóticas ni jerga gringa innecesaria.</li>
+      <li><strong>Sin Vercel-cult.</strong> Te enseñamos a deployar manual primero; las plataformas "todo-en-uno" son una opción, no la respuesta.</li>
+      <li><strong>Open source, CC-BY-SA.</strong> Todo el código y el currículum son tuyos.</li>
+      <li><strong>Lo que se cobra es la infraestructura opcional:</strong> VPS, mentorías, cohortes, certificados. No el conocimiento.</li>
+    </ul>
+
+    <h2>Inspirado por</h2>
+    <p>
+      W3Schools (Try-it inline), Cisco NetAcad (currículum serio), Platzi (calidad en español),
+      FreeCodeCamp (open source), Docker PWD (playground efímero), TonyHost/000webhost (hosting
+      gratuito), db4free (DB gratuita), Khan Academy (progresión clara), Mozilla MDN
+      (documentación técnica de referencia).
+    </p>
+
+    <h2>El founder</h2>
+    <p>
+      <strong>David "Polar" Pollard</strong> — Senior Software Engineer en Panamá.
+      8+ años construyendo fintech, e-commerce y SaaS. Trabaja remoto, le gustan los
+      juegos tipo Animal Crossing/Stardew, la música procedural, y las arquitecturas limpias.
+      Mantiene <a href="https://github.com/dev-dmpp">varios proyectos open source</a> en GitHub.
+    </p>
+
+    <h2>Cómo apoyar</h2>
+    <p>
+      <a href="/donar">Donar</a> · <a href="https://github.com/dev-dmpp/polar-school">Star en GitHub</a> ·
+      Compartir con alguien que esté aprendiendo · Reportar errores · Mandar un PR con tu propia lección.
+    </p>
+
+    <h2>El plan</h2>
+    <p>
+      <strong>F0 (ahora):</strong> 1 curso piloto (Linux básico, 20 lecciones) con simulador en navegador.<br />
+      <strong>F1 (2-3 semanas):</strong> 4 tracks completos (Linux, Docker, primer sitio, DBs).<br />
+      <strong>F2 (3-4 semanas):</strong> Sandbox Linux real (xterm.js + Docker, 15 min TTL).<br />
+      <strong>F3 (2 semanas):</strong> Login, progreso, badges, certificados.<br />
+      <strong>F4 (4+ semanas):</strong> Hosting PHP/Node/Python + DB 25 MB gratis para usuarios.<br />
+      <strong>F5+:</strong> Cohortes pagas, mentorías, marketplace de otros instructores, multi-idioma.
+    </p>
+    <p>
+      Ver el documento completo de visión: <a href="/VISION.md">VISION.md</a>.
+    </p>
+  </article>
+</BaseLayout>
+
+<style>
+  .sobre {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  h1 {
+    margin-top: 0.5rem;
+  }
+  .lead {
+    font-size: 1.15rem;
+    color: var(--ink-soft);
+  }
+  ul {
+    color: var(--ink-soft);
+    padding-left: 1.4rem;
+  }
+  ul li {
+    margin: 0.5rem 0;
+  }
+  h2 {
+    color: var(--accent-dark);
+    margin-top: 2.5rem;
+  }
+</style>

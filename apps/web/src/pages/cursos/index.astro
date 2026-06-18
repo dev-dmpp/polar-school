@@ -1,0 +1,115 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { linuxBasico } from '@polar-school/content'
+
+const courses = [linuxBasico]
+---
+
+<BaseLayout title="Cursos">
+  <section>
+    <h1>Cursos</h1>
+    <p class="lead">
+      Todo el contenido es gratis y open source. Empezá por donde te interese.
+    </p>
+
+    <div class="course-list">
+      {courses.map((course) => (
+        <a href={`/cursos/${course.meta.slug}`} class="course-card">
+          <div class="meta">
+            <span class="level">{course.meta.level}</span>
+            <span class="time">{course.meta.estimatedHours}h · {course.meta.totalLessons} lecciones</span>
+          </div>
+          <h2>{course.meta.title}</h2>
+          <p>{course.meta.description}</p>
+          <span class="arrow">Empezar →</span>
+        </a>
+      ))}
+    </div>
+
+    <div class="coming">
+      <h3>Próximamente</h3>
+      <ul>
+        <li>Docker desde cero (12 lecciones)</li>
+        <li>Tu primer sitio en un VPS (10 lecciones)</li>
+        <li>Bases de datos SQL — MariaDB y Postgres (15 lecciones)</li>
+        <li>Linux intermedio — servicios, logs, systemd (10 lecciones)</li>
+      </ul>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  h1 {
+    margin-top: 0.5rem;
+  }
+  .lead {
+    font-size: 1.15rem;
+    color: var(--ink-soft);
+    max-width: 720px;
+  }
+  .course-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+    margin: 2rem 0;
+  }
+  .course-card {
+    display: block;
+    background: var(--paper);
+    border: 2px solid var(--wood);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: var(--ink);
+    transition: all 0.15s;
+  }
+  .course-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  .meta {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  .level {
+    background: var(--leaf);
+    color: var(--paper);
+    padding: 0.15em 0.6em;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .time {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+  .course-card h2 {
+    margin: 0.4rem 0;
+  }
+  .course-card p {
+    color: var(--ink-soft);
+  }
+  .arrow {
+    color: var(--accent-dark);
+    font-family: var(--font-hand);
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+  .coming {
+    margin-top: 3rem;
+    padding: 1.5rem;
+    background: var(--paper-warm);
+    border-radius: 10px;
+  }
+  .coming h3 {
+    margin-top: 0;
+    color: var(--ink-soft);
+  }
+  .coming ul {
+    color: var(--ink-soft);
+    padding-left: 1.5rem;
+  }
+</style>

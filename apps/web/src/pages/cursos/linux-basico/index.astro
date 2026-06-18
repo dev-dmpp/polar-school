@@ -1,0 +1,123 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import { linuxBasico } from '@polar-school/content'
+
+const lessons = linuxBasico.lessons
+---
+
+<BaseLayout title={linuxBasico.meta.title}>
+  <section class="course-header">
+    <span class="tag">curso · {linuxBasico.meta.level}</span>
+    <h1>{linuxBasico.meta.title}</h1>
+    <p class="lead">{linuxBasico.meta.description}</p>
+    <p class="meta">
+      {linuxBasico.meta.totalLessons} lecciones · ~{linuxBasico.meta.estimatedHours}h · práctica en navegador
+    </p>
+  </section>
+
+  <section class="lessons">
+    <h2>Lecciones</h2>
+    <ol class="lesson-list">
+      {lessons.map((lesson, i) => (
+        <li>
+          <a href={`/cursos/linux-basico/${lesson.slug}`}>
+            <span class="num">{String(i + 1).padStart(2, '0')}</span>
+            <span class="body">
+              <span class="title">{lesson.title}</span>
+              <span class="desc">{lesson.description}</span>
+            </span>
+            <span class="cat">{lesson.category}</span>
+            <span class="arrow">→</span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </section>
+</BaseLayout>
+
+<style>
+  .course-header {
+    margin: 1rem 0 2rem;
+  }
+  .course-header h1 {
+    margin: 0.4rem 0 0.8rem;
+  }
+  .lead {
+    font-size: 1.15rem;
+    color: var(--ink-soft);
+    max-width: 720px;
+  }
+  .meta {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+  .lessons {
+    margin-top: 2.5rem;
+  }
+  .lesson-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+  .lesson-list li a {
+    display: grid;
+    grid-template-columns: 48px 1fr auto auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1.2rem;
+    background: var(--paper);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: all 0.15s;
+  }
+  .lesson-list li a:hover {
+    border-color: var(--accent);
+    background: var(--paper-warm);
+    transform: translateX(4px);
+  }
+  .num {
+    font-family: var(--font-hand);
+    font-size: 1.4rem;
+    color: var(--accent-dark);
+    font-weight: 700;
+  }
+  .body {
+    display: flex;
+    flex-direction: column;
+  }
+  .title {
+    font-family: var(--font-hand);
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+  .desc {
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+  }
+  .cat {
+    font-family: var(--font-hand);
+    font-size: 0.85rem;
+    background: var(--paper-warm);
+    border: 1px solid var(--border);
+    padding: 0.15em 0.55em;
+    border-radius: 999px;
+    color: var(--ink-soft);
+  }
+  .arrow {
+    color: var(--accent);
+    font-size: 1.3rem;
+  }
+  @media (max-width: 600px) {
+    .lesson-list li a {
+      grid-template-columns: 36px 1fr auto;
+    }
+    .cat {
+      display: none;
+    }
+  }
+</style>

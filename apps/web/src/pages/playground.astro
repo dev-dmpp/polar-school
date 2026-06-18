@@ -1,0 +1,91 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { TryIt } from '@polar-school/ui'
+---
+
+<BaseLayout title="Playground">
+  <section class="playground">
+    <h1>Playground Linux</h1>
+    <p class="lead">
+      Probá comandos Linux sin instalar nada. Esta es una terminal simulada — para práctica real
+      con containers, viene pronto el sandbox efímero (15 min de sesión).
+    </p>
+
+    <div class="hint-grid">
+      <div class="hint">
+        <strong>Probá esto:</strong>
+        <code>ls -la</code>
+      </div>
+      <div class="hint">
+        <strong>Navegá:</strong>
+        <code>cd proyectos</code>
+      </div>
+      <div class="hint">
+        <strong>Editá archivos:</strong>
+        <code>echo hola > test.txt && cat test.txt</code>
+      </div>
+      <div class="hint">
+        <strong>Buscá:</strong>
+        <code>find . -name "*.md"</code>
+      </div>
+    </div>
+
+    <TryIt client:load />
+
+    <div class="info">
+      <h3>Lo que funciona en esta versión</h3>
+      <p>
+        <code>ls, cd, pwd, cat, mkdir, touch, rm, cp, mv, echo, grep, find, chmod, ps, kill, man, whoami, date, help, clear</code>
+      </p>
+      <h3>Próximamente (sandbox real)</h3>
+      <p>
+        Container Linux real ephemeral (15 min), ejecutándose en nuestro VPS.
+        Vas a poder instalar paquetes, correr scripts, y se destruye al cerrar.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  h1 {
+    margin-top: 0.5rem;
+  }
+  .lead {
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+    max-width: 720px;
+  }
+  .hint-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.8rem;
+    margin: 1.5rem 0;
+  }
+  .hint {
+    background: var(--paper-warm);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem;
+  }
+  .hint strong {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+  }
+  .info {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--paper-warm);
+    border-radius: 10px;
+  }
+  .info h3 {
+    margin-top: 0;
+    color: var(--accent-dark);
+    font-size: 1.1rem;
+  }
+  .info p {
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+  }
+</style>

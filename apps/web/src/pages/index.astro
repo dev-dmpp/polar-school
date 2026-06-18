@@ -1,0 +1,255 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { linuxBasico } from '@polar-school/content'
+---
+
+<BaseLayout title="Inicio">
+  <section class="hero">
+    <span class="tag">gratis · en español · sin instalar nada</span>
+    <h1>Aprende Linux, Docker y hosting<br />desde cero, en tu navegador.</h1>
+    <p class="lead">
+      Currículum estructurado en español-latino, con práctica real en una terminal
+      que vive en tu navegador. Sin instalar nada. Sin pagar nada.
+    </p>
+    <div class="cta-row">
+      <a href={`/cursos/${linuxBasico.meta.slug}`} class="cta primary">
+        Empezar con "{linuxBasico.meta.title.split('—')[0].trim()}"
+      </a>
+      <a href="/playground" class="cta secondary">
+        Probar la terminal
+      </a>
+    </div>
+  </section>
+
+  <section class="why">
+    <h2>¿Por qué Polar School?</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Español, primero</h3>
+        <p>
+          La infraestructura (Linux, Docker, sysadmin) casi no se enseña en español.
+          Acá sí, con jerga técnica estándar que te sirve en cualquier país.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Práctica real</h3>
+        <p>
+          Cada lección viene con una terminal que podés usar directo en la página.
+          Tocás el comando, ves el resultado. Después, en el sandbox real, lo hacés vos.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Sin Vercel-cult</h3>
+        <p>
+          Te enseñamos a deployar MANUAL primero: SSH, Nginx, certbot.
+          Después te recomendamos plataformas como Vercel como atajo válido, no como religión.
+        </p>
+      </div>
+      <div class="card">
+        <h3>100% gratis, para siempre</h3>
+        <p>
+          El contenido siempre es gratis. Lo que se cobra (VPS managed, mentorías,
+          cohortes) es la infraestructura opcional, no el conocimiento.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="tracks">
+    <h2>Cursos disponibles</h2>
+    <div class="track-list">
+      <a href={`/cursos/${linuxBasico.meta.slug}`} class="track-card">
+        <div class="track-header">
+          <span class="track-level">básico</span>
+          <span class="track-time">{linuxBasico.meta.estimatedHours}h · {linuxBasico.meta.totalLessons} lecciones</span>
+        </div>
+        <h3>{linuxBasico.meta.title}</h3>
+        <p>{linuxBasico.meta.description}</p>
+        <span class="track-arrow">Empezar →</span>
+      </a>
+      <div class="track-card disabled">
+        <div class="track-header">
+          <span class="track-level">básico</span>
+          <span class="track-time">próximamente</span>
+        </div>
+        <h3>Docker desde cero</h3>
+        <p>Imágenes, containers, docker run, docker compose. En español, con práctica real.</p>
+        <span class="track-arrow muted">—</span>
+      </div>
+      <div class="track-card disabled">
+        <div class="track-header">
+          <span class="track-level">intermedio</span>
+          <span class="track-time">próximamente</span>
+        </div>
+        <h3>Tu primer sitio en un VPS</h3>
+        <p>Comprá un VPS, conectate por SSH, instalá Nginx, serví tu web. Manual, sin plataforma.</p>
+        <span class="track-arrow muted">—</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="support">
+    <h2>¿Te sirve?</h2>
+    <p>
+      Polar School es gratis y open source. Si te ahorró tiempo o aprendiste algo,
+      podís <a href="/donar">donar</a> para ayudar a mantenerlo. O si querés,
+      lo que cobro son <strong>mentorías 1-a-1</strong> y
+      <strong>cohortes pagas</strong> para profundizar.
+    </p>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    text-align: center;
+    padding: 2.5rem 0 3rem;
+  }
+  .hero .tag {
+    margin-bottom: 1rem;
+  }
+  .hero h1 {
+    font-size: 2.8rem;
+    margin: 0.5rem 0 1rem;
+  }
+  .lead {
+    font-size: 1.2rem;
+    color: var(--ink-soft);
+    max-width: 640px;
+    margin: 0 auto 1.5rem;
+  }
+  .cta-row {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .cta {
+    display: inline-block;
+    padding: 0.85em 1.5em;
+    border-radius: 8px;
+    font-weight: 700;
+    text-decoration: none;
+    font-family: var(--font-hand);
+    font-size: 1.1rem;
+  }
+  .cta.primary {
+    background: var(--accent);
+    color: var(--paper);
+  }
+  .cta.primary:hover {
+    background: var(--accent-dark);
+  }
+  .cta.secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 2px solid var(--ink);
+  }
+  .cta.secondary:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .why,
+  .tracks,
+  .support {
+    margin: 3rem 0;
+  }
+  .why h2,
+  .tracks h2,
+  .support h2 {
+    text-align: center;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.2rem;
+    margin-top: 2rem;
+  }
+  .card {
+    background: var(--paper-warm);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .card h3 {
+    margin-top: 0;
+    color: var(--accent-dark);
+  }
+  .card p {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+  .track-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.2rem;
+    margin-top: 2rem;
+  }
+  .track-card {
+    display: block;
+    background: var(--paper);
+    border: 2px solid var(--wood);
+    border-radius: 10px;
+    padding: 1.2rem;
+    text-decoration: none;
+    color: var(--ink);
+    transition: all 0.15s;
+    box-shadow: var(--shadow-sm);
+  }
+  .track-card:hover:not(.disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--accent);
+  }
+  .track-card.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .track-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  .track-level {
+    background: var(--leaf);
+    color: var(--paper);
+    padding: 0.15em 0.6em;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .track-time {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+  .track-card h3 {
+    margin: 0.4rem 0;
+    color: var(--ink);
+  }
+  .track-card p {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+  .track-arrow {
+    color: var(--accent-dark);
+    font-family: var(--font-hand);
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+  .track-arrow.muted {
+    color: var(--ink-soft);
+  }
+  .support {
+    text-align: center;
+    padding: 2rem 0;
+    background: var(--paper-warm);
+    border-radius: 12px;
+    padding: 2rem;
+  }
+  .support p {
+    max-width: 620px;
+    margin: 0 auto;
+    color: var(--ink-soft);
+  }
+</style>
