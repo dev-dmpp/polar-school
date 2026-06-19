@@ -4,8 +4,29 @@ export interface Lesson {
   description: string
   command: string
   difficulty: 'basico' | 'intermedio' | 'avanzado'
-  category: 'navegacion' | 'archivos' | 'texto' | 'permisos' | 'procesos' | 'red' | 'paquetes'
+  category:
+    | 'navegacion'
+    | 'archivos'
+    | 'texto'
+    | 'permisos'
+    | 'procesos'
+    | 'red'
+    | 'paquetes'
+    | 'servicios'
+    | 'logs'
+    | 'disco'
+    | 'memoria'
+    | 'compresion'
+    | 'contenedores'
+    | 'imagenes'
+    | 'orquestacion'
+    | 'deploy'
+    | 'ssh'
+    | 'webserver'
+    | 'seguridad'
   readTime: number
+  example?: string
+  tip?: string
 }
 
 export interface CourseMeta {
@@ -15,6 +36,7 @@ export interface CourseMeta {
   level: 'basico' | 'intermedio' | 'avanzado'
   totalLessons: number
   estimatedHours: number
+  upcoming?: boolean
 }
 
 export interface Course {

@@ -500,6 +500,361 @@ function man(_ctx: SimContext, args: string[]): SimResult {
   )
 }
 
+// ===== F1: Linux Intermedio / Docker / VPS commands =====
+
+function tail(ctx: SimContext, args: string[]): SimResult {
+  if (args.length === 0) return err('tail: falta archivo')
+  const nIdx = args.findIndex((a) => a === '-n')
+  const n = nIdx >= 0 ? parseInt(args[nIdx + 1], 10) : 10
+  const files = args.filter((a) => !a.startsWith('-') && a !== String(n))
+  if (files.length === 0) return err('tail: falta archivo')
+  const out: string[] = []
+  for (const file of files) {
+    const node = getNode(ctx, file)
+    if (!node || node.type !== 'file') return err(`tail: no se puede abrir '${file}'`)
+    const lines = (node.content ?? '').split('\n')
+    const last = lines.slice(-n)
+    out.push(files.length > 1 ? `==> ${file} <==\n${last.join('\n')}` : last.join('\n'))
+  }
+  return ok(out.join('\n'))
+}
+
+function head(ctx: SimContext, args: string[]): SimResult {
+  if (args.length === 0) return err('head: falta archivo')
+  const nIdx = args.findIndex((a) => a === '-n')
+  const n = nIdx >= 0 ? parseInt(args[nIdx + 1], 10) : 10
+  const files = args.filter((a) => !a.startsWith('-') && a !== String(n))
+  if (files.length === 0) return err('head: falta archivo')
+  const out: string[] = []
+  for (const file of files) {
+    const node = getNode(ctx, file)
+    if (!node || node.type !== 'file') return err(`head: no se puede abrir '${file}'`)
+    const lines = (node.content ?? '').split('\n')
+    const first = lines.slice(0, n)
+    out.push(files.length > 1 ? `==> ${file} <==\n${first.join('\n')}` : first.join('\n'))
+  }
+  return ok(out.join('\n'))
+}
+
+function wc(ctx: SimContext, args: string[]): SimResult {
+  const files = args.filter((a) => !a.startsWith('-'))
+  if (files.length === 0) return err('wc: falta archivo')
+  const lines: string[] = []
+  for (const file of files) {
+    const node = getNode(ctx, file)
+    if (!node || node.type !== 'file') return err(`wc: ${file}: No existe el archivo`)
+    const content = node.content ?? ''
+    const cLines = content.split('\n').length - (content.endsWith('\n') ? 1 : 0)
+    const cWords = content.split(/\s+/).filter((w) => w.length > 0).length
+    const cBytes = content.length
+    lines.push(`${String(cLines).padStart(7)} ${String(cWords).padStart(7)} ${String(cBytes).padStart(7)} ${file}`)
+  }
+  return ok(lines.join('\n'))
+}
+
+function sort(ctx: SimContext, args: string[]): SimResult {
+  const reverse = args.includes('-r')
+  const files = args.filter((a) => !a.startsWith('-'))
+  if (files.length === 0) return err('sort: falta archivo')
+  const out: string[] = []
+  for (const file of files) {
+    const node = getNode(ctx, file)
+    if (!node || node.type !== 'file') return err(`sort: ${file}: No existe`)
+    const lines = (node.content ?? '').split('\n').filter((l) => l.length > 0)
+    const sorted = [...lines].sort()
+    out.push(reverse ? sorted.reverse().join('\n') : sorted.join('\n'))
+  }
+  return ok(out.join('\n'))
+}
+
+function uniq(ctx: SimContext, args: string[]): SimResult {
+  const files = args.filter((a) => !a.startsWith('-'))
+  if (files.length === 0) return err('uniq: falta archivo')
+  const file = files[0]
+  const node = getNode(ctx, file)
+  if (!node || node.type !== 'file') return err(`uniq: ${file}: No existe`)
+  const lines = (node.content ?? '').split('\n')
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const line of lines) {
+    if (!seen.has(line)) {
+      seen.add(line)
+      result.push(line)
+    }
+  }
+  return ok(result.join('\n'))
+}
+
+function tar(ctx: SimContext, args: string[]): SimResult {
+  const create = args.includes('-c')
+  const extract = args.includes('-x')
+  const list = args.includes('-t')
+  const fIdx = args.findIndex((a) => a === '-f')
+  const f = fIdx >= 0 ? args[fIdx + 1] : null
+  if (!f) return err('tar: falta argumento -f')
+  if (create) {
+    const paths = args.filter((a) => !a.startsWith('-') && a !== f)
+    if (paths.length === 0) return err('tar: no se dieron rutas')
+    let content = 'TAR ARCHIVE\n'
+    for (const path of paths) {
+      const node = getNode(ctx, path)
+      if (!node) return err(`tar: ${path}: No existe`)
+      content += `${path}\n`
+    }
+    const resolved = resolvePath(ctx, f)
+    const parts = resolved.split('/').filter((p) => p.length > 0)
+    const name = parts.pop()!
+    const parent = getNode(ctx, '/' + parts.join('/'))
+    if (!parent || parent.type !== 'dir') return err(`tar: ${f}: No existe`)
+    parent.children = parent.children ?? {}
+    parent.children[name] = { type: 'file', content, mode: 0o644, mtime: Date.now(), owner: ctx.env.USER }
+    return ok('')
+  }
+  if (list || extract) {
+    const resolved = resolvePath(ctx, f)
+    const node = getNode(ctx, resolved)
+    if (!node || node.type !== 'file') return err(`tar: ${f}: No se puede abrir`)
+    const content = node.content ?? ''
+    if (list) return ok(content)
+    const entries = content.split('\n').filter((l) => l.length > 0 && l !== 'TAR ARCHIVE').length
+    return ok(`Extraídas ${entries} entradas`)
+  }
+  return err('tar: debes especificar -c, -x o -t')
+}
+
+function df(_ctx: SimContext, args: string[]): SimResult {
+  const human = args.includes('-h')
+  if (human) {
+    return ok(`S.Archivos     Tamaño Usados  Disp Uso% Montado en\n/dev/sda1        50G    12G   36G  25% /\ntmpfs            2G     0M    2G   0% /dev/shm`)
+  }
+  return ok(`S.Archivos       Bloques de 1K   Usados   Disponibles   Uso% Montado en\n/dev/sda1          52428800  12582912  39845888  25% /\ntmpfs              2097152         0   2097152   0% /dev/shm`)
+}
+
+function du(ctx: SimContext, args: string[]): SimResult {
+  const human = args.includes('-h') || args.includes('-sh')
+  const summary = args.includes('-s')
+  const paths = args.filter((a) => !a.startsWith('-'))
+  if (paths.length === 0) return ok(human ? '4,0K\t.' : '4096\t.')
+  const lines: string[] = []
+  for (const path of paths) {
+    const node = getNode(ctx, path)
+    if (!node) return err(`du: ${path}: No existe`)
+    const size = node.type === 'file' ? (node.content?.length ?? 0) : 4096
+    lines.push(human ? `4,0K\t${path}` : `${size}\t${path}`)
+  }
+  return ok(lines.join('\n'))
+}
+
+function free(_ctx: SimContext, args: string[]): SimResult {
+  const human = args.includes('-h')
+  if (human) {
+    return ok(`              total      used      free    shared  buff/cache   available\nMem:          4,0Gi    1,0Gi    2,0Gi     256Mi     800Mi    2,8Gi\nSwap:           0B        0B        0B`)
+  }
+  return ok(`              total      used      free    shared  buff/cache   available\nMem:        4194304   1048576   2097152    262144     819200   2867200\nSwap:             0         0         0`)
+}
+
+function top(_ctx: SimContext): SimResult {
+  return ok(`top - 12:34:56 up 5 days,  1 user,  load average: 0,10, 0,05, 0,01\nTareas: 98 total,   1 ejecutándose, 97 durmiendo\n%Cpu(s):  2,5 usuario,  1,0 sistema,  0,0 nice, 96,5 inactivo\nMiB Mem :   4096,0 total,   1024,2 usado,   2800,5 libre,    256,1 búfer/caché\n\n  PID USUARIO   PR  NI    VIRT    RES  SHR S  %CPU  %MEM     TIEMPO+ ORDEN\n 1234 polar     20   0  1024M   128M   16M S   0,5   3,1   0:01,23 bash\n 5678 polar     20   0   512M    64M    8M S   0,2   1,6   0:00,45 top\n    1 root      20   0   256M    16M    4M S   0,0   0,4   0:05,67 systemd\n  (presiona 'q' para salir)`)
+}
+
+interface ServiceState {
+  active: 'active' | 'inactive' | 'failed'
+  enabled: boolean
+  description: string
+}
+
+const simulatedServices: Record<string, ServiceState> = {
+  'nginx.service': { active: 'active', enabled: true, description: 'A high performance web server and reverse proxy server' },
+  'ssh.service': { active: 'active', enabled: true, description: 'SSH per-connection server daemon' },
+  'cron.service': { active: 'active', enabled: true, description: 'Regular background program processing daemon' },
+  'fail2ban.service': { active: 'inactive', enabled: false, description: 'Ban IPs that make too many authentication failures' },
+  'ufw.service': { active: 'inactive', enabled: false, description: 'Uncomplicated firewall' },
+}
+
+function systemctl(ctx: SimContext, args: string[]): SimResult {
+  const action = args[0]
+  if (!action || action === 'list-units') {
+    const lines = ['UNIT                STATE   ACTIVE  DESCRIPTION']
+    for (const [name, s] of Object.entries(simulatedServices)) {
+      lines.push(`${name.padEnd(20)} loaded ${s.active.padEnd(8)} ${s.description.slice(0, 40)}`)
+    }
+    return ok(lines.join('\n'))
+  }
+  if (action === 'status') {
+    const name = args[1] || 'nginx.service'
+    const s = simulatedServices[name] ?? { active: 'inactive' as const, enabled: false, description: 'Servicio desconocido' }
+    return ok(`● ${name} - ${s.description}\n     Loaded: loaded (/lib/systemd/system/${name}; ${s.enabled ? 'enabled' : 'disabled'})\n     Active: ${s.active} (${s.active === 'active' ? 'running' : 'dead'})\n\n[salida simulada — systemd real mostraría entradas recientes del log]`)
+  }
+  if (action === 'start' || action === 'stop' || action === 'restart') {
+    const name = args[1]
+    if (!name) return err(`systemctl: falta nombre del servicio`)
+    if (!simulatedServices[name]) return err(`Failed to ${action} ${name}: Unit not found.`)
+    simulatedServices[name].active = action === 'stop' ? 'inactive' : 'active'
+    return ok('')
+  }
+  if (action === 'enable' || action === 'disable') {
+    const name = args[1]
+    if (!name) return err(`systemctl: falta nombre del servicio`)
+    if (!simulatedServices[name]) return err(`Failed to ${action} ${name}: Unit not found.`)
+    simulatedServices[name].enabled = action === 'enable'
+    return ok(`Synchronizing state of ${name} with SysV service script.`)
+  }
+  return err(`systemctl: acción desconocida '${action}'`)
+}
+
+function journalctl(_ctx: SimContext, args: string[]): SimResult {
+  const fIdx = args.findIndex((a) => a === '-f')
+  const nIdx = args.findIndex((a) => a === '-n')
+  const n = nIdx >= 0 ? parseInt(args[nIdx + 1], 10) : 10
+  const samples = [
+    `-- Logs begin at Mon 2026-06-15 00:00:00 UTC, end at Mon 2026-06-19 12:34:56 UTC. --`,
+    `Jun 19 12:00:01 polar systemd[1]: Starting Daily apt download activities...`,
+    `Jun 19 12:00:05 polar apt[2345]: Get:1 http://archive.ubuntu.com focal InRelease [265 kB]`,
+    `Jun 19 12:01:12 polar nginx[1234]: 192.168.1.50 - - [19/Jun/2026:12:01:12 +0000] "GET / HTTP/1.1" 200 1234`,
+    `Jun 19 12:02:30 polar sshd[2345]: Accepted publickey for polar from 192.168.1.50 port 54321`,
+    `Jun 19 12:03:00 polar systemd[1]: nginx.service: Scheduled restart job.`,
+    `Jun 19 12:03:01 polar systemd[1]: Stopped A high performance web server.`,
+    `Jun 19 12:03:02 polar systemd[1]: Starting A high performance web server...`,
+    `Jun 19 12:03:03 polar systemd[1]: Started A high performance web server.`,
+    `Jun 19 12:04:00 polar CRON[3456]: (root) CMD (test -x /usr/sbin/anacron)`,
+  ]
+  const result = fIdx >= 0 ? samples.concat(['(modo follow — Ctrl+C para salir)']) : samples
+  return ok(result.slice(-n).join('\n'))
+}
+
+function service(_ctx: SimContext, args: string[]): SimResult {
+  const name = args[0]
+  const action = args[1]
+  if (!name || !action) return err('service: faltan operandos\nUso: service [nombre] [start|stop|restart|status]')
+  return ok(` * ${action === 'status' ? 'estado de' : action + 'ando'} ${name}\n   ...hecho.`)
+}
+
+function adduser(ctx: SimContext, args: string[]): SimResult {
+  if (args.length === 0) return err('adduser: falta el nombre de usuario')
+  const username = args[0]
+  if (!ctx.env.USERS) ctx.env.USERS = 'root,polar'
+  if (ctx.env.USERS.split(',').includes(username)) return err(`adduser: el usuario '${username}' ya existe`)
+  ctx.env.USERS = ctx.env.USERS + ',' + username
+  return ok(`Agregando usuario '${username}'...\nCreando directorio home '/home/${username}'...\n[simulado — en un sistema real escribirías: passwd ${username}]`)
+}
+
+function ufw(_ctx: SimContext, args: string[]): SimResult {
+  const action = args[0]
+  if (!action || action === 'status') {
+    return ok(`Estado: activo\n\nHasta                     Acción      Desde\n--                         ------      ----\n22/tcp                     ALLOW       Anywhere\n80/tcp                     ALLOW       Anywhere\n443/tcp                    ALLOW       Anywhere`)
+  }
+  if (action === 'allow' || action === 'deny') {
+    const target = args[1]
+    if (!target) return err(`ufw: falta puerto o servicio`)
+    return ok(`Regla agregada\nRegla agregada (v6)`)
+  }
+  return err(`ufw: acción desconocida '${action}'`)
+}
+
+function apt(_ctx: SimContext, args: string[]): SimResult {
+  const action = args[0]
+  if (action === 'update') {
+    return ok(`Obj:1 http://archive.ubuntu.com focal InRelease\nLeyendo lista de paquetes... Todos los paquetes están actualizados.`)
+  }
+  if (action === 'upgrade') {
+    return ok(`Leyendo lista de paquetes...\n0 actualizados, 0 nuevos, 0 para eliminar.\n0 no actualizados.`)
+  }
+  if (action === 'install') {
+    const pkg = args[1]
+    if (!pkg) return err('apt install: falta nombre del paquete')
+    return ok(`Leyendo lista de paquetes...\nSe instalarán los siguientes paquetes NUEVOS:\n  ${pkg}\n0 actualizados, 1 nuevos, 0 para eliminar.\nNecesito descargar 1.234 kB de archivos.\n[simulado — apt real descargaría e instalaría ${pkg}]`)
+  }
+  if (action === 'remove') {
+    const pkg = args[1]
+    if (!pkg) return err('apt remove: falta nombre del paquete')
+    return ok(`Leyendo lista de paquetes...\nRemoviendo ${pkg}...\n[simulado]`)
+  }
+  return err(`apt: acción desconocida '${action}'`)
+}
+
+function ssh(_ctx: SimContext, args: string[]): SimResult {
+  if (args.length === 0) return err('ssh: falta destino\nUso: ssh [usuario@]host')
+  const target = args[0]
+  if (!target.includes('@')) return err(`ssh: falta host (usa ssh usuario@host)`)
+  return ok(`Conectando a ${target}...\n[simulado — en una terminal real abriría una sesión interactiva]\nWelcome to Ubuntu 22.04 LTS\n\nLast login: Mon Jun 19 12:00:00 2026`)
+}
+
+function scp(_ctx: SimContext, args: string[]): SimResult {
+  if (args.length < 2) return err('scp: falta origen o destino')
+  return ok(`index.html 100% 1234 1,2KB/s 00:00\n[simulado — en una terminal real copiaría archivos seguros]`)
+}
+
+function curl(_ctx: SimContext, args: string[]): SimResult {
+  const url = args.find((a) => a.startsWith('http'))
+  if (!url) return err('curl: falta URL')
+  return ok(`<!DOCTYPE html>\n<html><body><h1>Polar School</h1></body></html>\n[respuesta simulada — curl real mostraría la respuesta del servidor]`)
+}
+
+function wget(_ctx: SimContext, args: string[]): SimResult {
+  const url = args[0]
+  if (!url) return err('wget: falta URL')
+  return ok(`--2026-06-19 12:00:00--  ${url}\nResolviendo... hecho.\n[simulado]`)
+}
+
+function git(ctx: SimContext, args: string[]): SimResult {
+  const cmd = args[0]
+  if (cmd === 'status') {
+    return ok(`En la rama main\nTu rama está actualizada con 'origin/main'.\n\nnada para hacer commit, el árbol de trabajo está limpio`)
+  }
+  if (cmd === 'log') {
+    return ok(`commit abc123 (HEAD -> main)\nAuthor: polar <polar@polar.school>\nDate:   Mon Jun 19 12:00:00 2026\n\n    Initial commit`)
+  }
+  if (cmd === 'pull') {
+    return ok(`Ya está actualizado.`)
+  }
+  if (cmd === 'clone') {
+    const url = args[1]
+    if (!url) return err('git clone: falta URL')
+    const name = url.split('/').pop()?.replace('.git', '') ?? 'repo'
+    return ok(`Clonando en '${name}'...\nremote: Enumerando objetos: 42, hecho.\nRecibiendo objetos: 100% (42/42), hecho.\n[simulado]`)
+  }
+  return ok(`git ${cmd}: simulado — en un repo real ejecutaría: ${args.join(' ')}`)
+}
+
+function nano(_ctx: SimContext, args: string[]): SimResult {
+  const file = args[0] ?? 'nuevo-archivo'
+  return ok(`GNU nano 6.2 — ${file}\n\n  [ 0 líneas leídas ]\n^G Ayuda  ^O Guardar  ^W Buscar  ^K Cortar  ^J Justificar\n^X Salir   ^R Leer     ^U Pegar\n\n[editor simulado — nano real abriría interactivamente]`)
+}
+
+function docker(_ctx: SimContext, args: string[]): SimResult {
+  const action = args[0]
+  if (!action) return err('docker: falta comando\nUso: docker [run|ps|images|pull|stop|start|rm|rmi|logs|exec|build]')
+  if (action === 'run') {
+    const image = args.find((a) => !a.startsWith('-') && a !== 'run') ?? 'hello-world'
+    return ok(`Unable to find image '${image}:latest' locally\nlatest: Pulling from library/${image}\n[simulado — docker real descargaría y correría ${image}]\n\nHello from Docker!\nThis message shows that your installation appears to be working correctly.`)
+  }
+  if (action === 'ps') {
+    return ok(`CONTAINER ID   IMAGE          COMMAND   CREATED       STATUS       PORTS     NAMES\na1b2c3d4e5f6   nginx:latest   "nginx"   2 hours ago   Up 2 hours   80/tcp    web\n[simulado]`)
+  }
+  if (action === 'images') {
+    return ok(`REPOSITORY   TAG       IMAGE ID       CREATED       SIZE\nnginx        latest    a1b2c3d4e5f6   2 hours ago   187MB\nhello-world  latest    b7c5d4e3f2a1   3 months ago  13,3kB\n[simulado]`)
+  }
+  if (action === 'pull') {
+    const image = args[1] ?? 'nginx'
+    return ok(`Using default tag: latest\nlatest: Pulling from library/${image}\nStatus: Downloaded newer image for ${image}:latest\n[simulado]`)
+  }
+  if (['stop', 'start', 'restart', 'rm', 'rmi', 'logs', 'exec', 'build'].includes(action)) {
+    const target = args[1] ?? 'a1b2c3d4'
+    return ok(`${target}\n[simulado — docker real haría '${action}' sobre ${target}]`)
+  }
+  return err(`docker: comando desconocido '${action}'`)
+}
+
+function nginx(_ctx: SimContext, args: string[]): SimResult {
+  if (args.includes('-v') || args.includes('-V')) {
+    return ok(`nginx version: nginx/1.24.0 (Ubuntu)`)
+  }
+  if (args[0] === '-s' && args[1] === 'reload') return ok('nginx: recargado')
+  if (args[0] === '-s' && args[1] === 'stop') return ok('nginx: detenido')
+  if (args[0] === '-t') return ok('nginx: la configuración es correcta')
+  return ok('[simulado — nginx real arrancaría el servidor en foreground]')
+}
+
 function ok(stdout: string): SimResult {
   return { stdout, stderr: '', exitCode: 0, durationMs: 0 }
 }
@@ -533,12 +888,36 @@ export function createSimulator() {
         ps: () => ps(ctx),
         kill: (a) => kill(ctx, a),
         man: (a) => man(ctx, a),
+        tail: (a) => tail(ctx, a),
+        head: (a) => head(ctx, a),
+        wc: (a) => wc(ctx, a),
+        sort: (a) => sort(ctx, a),
+        uniq: (a) => uniq(ctx, a),
+        tar: (a) => tar(ctx, a),
+        df: (a) => df(ctx, a),
+        du: (a) => du(ctx, a),
+        free: (a) => free(ctx, a),
+        top: () => top(ctx),
+        systemctl: (a) => systemctl(ctx, a),
+        journalctl: (a) => journalctl(ctx, a),
+        service: (a) => service(ctx, a),
+        adduser: (a) => adduser(ctx, a),
+        ufw: (a) => ufw(ctx, a),
+        apt: (a) => apt(ctx, a),
+        ssh: (a) => ssh(ctx, a),
+        scp: (a) => scp(ctx, a),
+        curl: (a) => curl(ctx, a),
+        wget: (a) => wget(ctx, a),
+        git: (a) => git(ctx, a),
+        nano: (a) => nano(ctx, a),
+        docker: (a) => docker(ctx, a),
+        nginx: (a) => nginx(ctx, a),
         whoami: () => ok(ctx.env.USER),
         date: () => ok(new Date().toString()),
         clear: () => ok('\x1b[CLEAR\x1b'),
         help: () =>
           ok(
-            'Comandos disponibles: ls, cd, pwd, cat, mkdir, touch, rm, cp, mv, echo, grep, find, chmod, ps, kill, man, whoami, date, clear'
+            'Comandos: ls, cd, pwd, cat, mkdir, touch, rm, cp, mv, echo, grep, find, chmod, ps, kill, man, tail, head, wc, sort, uniq, tar, df, du, free, top, systemctl, journalctl, service, adduser, ufw, apt, ssh, scp, curl, wget, git, nano, docker, nginx, whoami, date, clear'
           ),
       }
       const handler = handlers[cmd]

@@ -1,0 +1,159 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import { linuxIntermedio } from '@polar-school/content'
+import { TryIt } from '@polar-school/ui'
+
+export function getStaticPaths() {
+  return linuxIntermedio.lessons.map((lesson) => ({
+    params: { slug: lesson.slug },
+    props: { lesson },
+  }))
+}
+
+const { lesson } = Astro.props
+const idx = linuxIntermedio.lessons.findIndex((l) => l.slug === lesson.slug)
+const prev = idx > 0 ? linuxIntermedio.lessons[idx - 1] : null
+const next = idx < linuxIntermedio.lessons.length - 1 ? linuxIntermedio.lessons[idx + 1] : null
+
+const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; tip: string; tryit: string[] }> = {
+  '01-systemctl-status': {
+    queEs: 'systemctl status te muestra el estado actual de un servicio: si está corriendo, su PID, hace cuánto arrancó, y las últimas líneas de su log. Es el primer comando cuando algo "no anda" en un servidor.',
+    cuando: 'Cuando un servicio se cayó. Cuando quieres confirmar que algo está corriendo después de instalarlo. Cuando necesitas saber el PID para matarlo.',
+    ejemplo: '$ sudo systemctl status nginx.service\n● nginx.service - A high performance web server and reverse proxy server\n     Loaded: loaded (/lib/systemd/system/nginx.service; enabled)\n     Active: active (running) since Mon 2026-06-15 10:00:00 UTC\n   Main PID: 1234 (nginx)',
+    tip: 'Los 3 campos clave: Loaded (está instalado y configurado para arrancar), Active (corriendo AHORA), y el Main PID (qué proceso es).',
+    tryit: ['systemctl list-units', 'systemctl status nginx.service'],
+  },
+  '02-systemctl-start-stop': {
+    queEs: 'systemctl start arranca un servicio detenido. stop lo detiene (le envía SIGTERM). restart lo recicla (stop + start). Son los comandos básicos de control.',
+    cuando: 'Cuando cambiaste la configuración de un servicio y necesitas recargarla. Cuando un servicio se colgó y quieres reiniciarlo. Cuando quieres detener algo temporalmente.',
+    ejemplo: '$ sudo systemctl restart nginx.service\n[simulado] El servicio nginx se reinició y ahora corre con la configuración nueva.',
+    tip: 'Si cambias un archivo de configuración, restart es lo normal. Si solo quieres aplicar cambios sin cortar conexiones, prueba reload (no todos los servicios lo soportan).',
+    tryit: ['systemctl status nginx.service', 'systemctl stop nginx.service', 'systemctl status nginx.service', 'systemctl start nginx.service', 'systemctl status nginx.service'],
+  },
+  '03-systemctl-enable': {
+    queEs: 'systemctl enable configura un servicio para que systemd lo arranque automáticamente cada vez que el servidor prende. disable hace lo contrario.',
+    cuando: 'Inmediatamente después de instalar un servicio que quieres que esté siempre corriendo (Nginx, SSH, tu app). Antes de reiniciar el servidor, para que el servicio vuelva solo.',
+    ejemplo: '$ sudo systemctl enable nginx.service\nSynchronizing state of nginx.service with SysV service script.\n\n$ sudo systemctl is-enabled nginx.service\nenabled',
+    tip: 'enable no inicia el servicio ahora, solo lo configura para el próximo reinicio. Si quieres ambos, usa enable --now.',
+    tryit: ['systemctl list-units', 'systemctl enable nginx.service'],
+  },
+  '04-journalctl': {
+    queEs: 'journalctl te permite leer los logs del sistema almacenados por systemd. Podés filtrar por servicio (-u), por tiempo (--since), y seguir en vivo (-f).',
+    cuando: 'Cuando algo falla en un servicio y querés ver qué dijo en el log. Cuando necesitás auditar qué pasó en un momento específico. Cuando debuggeás un deploy que no funcionó.',
+    ejemplo: '$ journalctl -u nginx.service --since "1 hour ago"\n-- Logs begin at Mon 2026-06-15 00:00:00 UTC --\nJun 19 12:01:12 polar nginx[1234]: 192.168.1.50 - - "GET / HTTP/1.1" 200 1234',
+    tip: 'Filtros útiles: -u servicio (logs de un servicio), --since "fecha", -f (follow, como tail -f), -n N (últimas N líneas).',
+    tryit: ['journalctl -n 5', 'journalctl -u nginx.service', 'journalctl --since "1 hour ago" -n 5'],
+  },
+  '05-service-legacy': {
+    queEs: 'service es el comando viejo (SysV init) para controlar servicios. En servidores modernos con systemd, funciona como wrapper y traduce las llamadas. Sigue vivo por compatibilidad.',
+    cuando: 'En tutoriales viejos. En scripts antiguos que aún no migraron. En imágenes Docker minimalistas sin systemd. En servidores con CentOS/RHEL viejos.',
+    ejemplo: '$ sudo service nginx status\n * nginx is running\n\n$ sudo service nginx restart\n * Restarting nginx',
+    tip: 'Para servidores nuevos siempre usa systemctl. service aparece en tutoriales viejos, en scripts antiguos, y en imágenes Docker minimalistas sin systemd.',
+    tryit: ['service nginx status', 'service nginx restart', 'service nginx status'],
+  },
+  '06-tail-f': {
+    queEs: 'tail -f muestra las últimas líneas de un archivo y SIGUE actualizándose en vivo. Cada vez que el archivo crece (un log), tail muestra las líneas nuevas.',
+    cuando: 'Cuando debuggeás un deploy y querés ver los requests llegar. Cuando un usuario reporta un error y querés ver qué pasa en el log al reproducirlo. Cuando monitoreás un proceso.',
+    ejemplo: '$ tail -f /var/log/nginx/access.log\n192.168.1.50 - - [19/Jun/2026:12:01:12 +0000] "GET / HTTP/1.1" 200 1234\n192.168.1.51 - - [19/Jun/2026:12:01:15 +0000] "GET /style.css HTTP/1.1" 200 567',
+    tip: 'Ctrl+C para salir del modo follow. -n 50 muestra las últimas 50 líneas antes de seguir. Equivalente en systemd: journalctl -f.',
+    tryit: ['ls /var/log', 'tail -n 5 /var/log/nginx/access.log', 'journalctl -f -n 5'],
+  },
+  '07-texto-utils': {
+    queEs: 'head muestra las primeras N líneas. wc cuenta líneas, palabras y bytes. sort ordena líneas. uniq elimina duplicados consecutivos. Combinados con pipes son brutales para analizar texto.',
+    cuando: 'Análisis de logs (combinar cat + sort + uniq + wc). Limpiar datos CSV. Contar líneas en código fuente. Ver el principio de archivos sin abrirlos.',
+    ejemplo: '$ cat logs.txt | sort | uniq | wc -l\n47',
+    tip: 'Combinados con pipes (|) son brutales para analizar logs: cat + sort + uniq + wc te da el resumen en una línea.',
+    tryit: ['head -n 3 /etc/hostname', 'wc -l /etc/hostname', 'echo -e "b\\na\\nc\\na\\nb" | sort', 'echo -e "b\\na\\nc\\na\\nb" | sort | uniq'],
+  },
+  '08-tar': {
+    queEs: 'tar agrupa varios archivos en uno solo (.tar). Combinado con gzip (.tar.gz) comprime. Es el formato estándar para backups y distribución de código fuente.',
+    cuando: 'Backups antes de un cambio grande. Distribuir código fuente (muchos proyectos se publican como .tar.gz). Mover carpetas entre servidores. Comprimir logs viejos.',
+    ejemplo: '$ tar -czf backup.tar.gz proyectos/\n[simulado] backup.tar.gz creado (compresión con gzip)\n\n$ tar -xzf backup.tar.gz\nExtraídas 5 entradas',
+    tip: 'Flags clave: -c crear, -x extraer, -t listar, -z gzip, -j bzip2, -f archivo. Casi siempre: -czf para crear, -xzf para extraer.',
+    tryit: ['ls', 'tar -czf backup.tar.gz proyectos/', 'ls', 'tar -t -f backup.tar.gz'],
+  },
+  '09-df-du': {
+    queEs: 'df muestra el espacio libre y usado por partición (a nivel del filesystem). du muestra cuánto ocupa cada carpeta/archivo (a nivel del contenido). Juntos diagnostican "no me queda espacio".',
+    cuando: 'Cuando el servidor te avisa que el disco está lleno. Cuando un deploy falla por falta de espacio. Cuando querés ver qué carpetas crecieron demasiado.',
+    ejemplo: '$ df -h\nS.Archivos     Tamaño Usados  Disp Uso% Montado en\n/dev/sda1        50G    12G   36G  25% /\ntmpfs            2G     0M    2G   0% /dev/shm\n\n$ du -sh proyectos/\n4,0K\tproyectos/',
+    tip: 'Si df muestra 100% uso, busca carpetas grandes con du -sh /* | sort -h y borra lo que no necesites (logs viejos, cache, node_modules).',
+    tryit: ['df -h', 'du -sh proyectos/', 'du -sh /etc'],
+  },
+  '10-free-top': {
+    queEs: 'free muestra cuánta RAM está usada, libre y en cache. top muestra procesos en vivo ordenados por CPU/RAM (similar al Activity Monitor de macOS o Task Manager de Windows).',
+    cuando: 'Cuando el servidor está lento. Cuando una app consume demasiada memoria. Cuando necesitás encontrar un proceso específico para matarlo.',
+    ejemplo: '$ free -h\n              total      used      free    shared  buff/cache   available\nMem:          4,0Gi    1,0Gi    2,0Gi     256Mi     800Mi    2,8Gi\nSwap:           0B        0B        0B\n\n$ top\n  PID USUARIO   PR  NI    VIRT    RES  SHR S  %CPU  %MEM     TIEMPO+ ORDEN\n 1234 polar     20   0  1024M   128M   16M S   0,5   3,1   0:01,23 bash',
+    tip: 'Si free dice "available" mucho menor que "total", tu sistema está usando swap (disco como RAM), lo cual es lento. Busca el proceso pesado con top y reinícialo.',
+    tryit: ['free -h', 'top', 'ps aux | head -5'],
+  },
+}
+
+const content = CONTENT[lesson.slug]
+---
+
+<BaseLayout title={lesson.title}>
+  <article class="lesson">
+    <header>
+      <span class="tag">lección {idx + 1} de {linuxIntermedio.lessons.length}</span>
+      <h1>{lesson.title}</h1>
+      <p class="lead">{lesson.description}</p>
+    </header>
+
+    <section class="block">
+      <h2>¿Qué es?</h2>
+      <p>{content.queEs}</p>
+    </section>
+
+    <section class="block">
+      <h2>¿Cuándo lo usas?</h2>
+      <p>{content.cuando}</p>
+    </section>
+
+    <section class="block">
+      <h2>Ejemplo</h2>
+      <pre><code>{content.ejemplo}</code></pre>
+    </section>
+
+    <section class="block tryit-block">
+      <h2>Pruébalo</h2>
+      <p>Ejecuta los comandos en esta terminal simulada. Escribe los tuyos también.</p>
+      <TryIt client:load initialCommands={content.tryit} />
+    </section>
+
+    {content.tip && (
+      <section class="block tip-block">
+        <h2>💡 Tip</h2>
+        <p>{content.tip}</p>
+      </section>
+    )}
+
+    <nav class="lesson-nav">
+      {prev ? (
+        <a href={`/cursos/linux-intermedio/${prev.slug}`} class="prev">
+          ← {prev.title}
+        </a>
+      ) : <span></span>}
+      {next ? (
+        <a href={`/cursos/linux-intermedio/${next.slug}`} class="next">
+          {next.title} →
+        </a>
+      ) : <span class="done">🎉 Última lección</span>}
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .lesson { max-width: 760px; margin: 0 auto; }
+  .lesson header { margin-bottom: 2rem; }
+  .lesson h1 { font-size: 2.4rem; margin: 0.4rem 0 0.8rem; }
+  .lead { font-size: 1.1rem; color: var(--ink-soft); }
+  .block { margin: 2rem 0; }
+  .block h2 { font-size: 1.5rem; color: var(--accent-dark); margin-bottom: 0.6rem; }
+  .tryit-block { background: var(--paper-warm); border: 2px solid var(--wood); border-radius: 12px; padding: 1.5rem; }
+  .tip-block { background: #fef3d7; border-left: 4px solid var(--accent); padding: 1rem 1.5rem; border-radius: 4px; }
+  .tip-block h2 { color: var(--accent-dark); margin-top: 0; }
+  .lesson-nav { display: flex; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 2rem; border-top: 2px dashed var(--wood); }
+  .lesson-nav a { text-decoration: none; color: var(--accent-dark); font-family: var(--font-hand); font-size: 1.05rem; font-weight: 700; padding: 0.5em 1em; border: 2px solid var(--wood); border-radius: 8px; transition: all 0.15s; }
+  .lesson-nav a:hover { background: var(--wood); color: var(--paper); }
+  .done { font-family: var(--font-hand); font-size: 1.05rem; color: var(--leaf-dark); padding: 0.5em 1em; }
+</style>

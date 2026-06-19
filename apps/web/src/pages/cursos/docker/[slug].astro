@@ -1,0 +1,173 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import { docker } from '@polar-school/content'
+import { TryIt } from '@polar-school/ui'
+
+export function getStaticPaths() {
+  return docker.lessons.map((lesson) => ({
+    params: { slug: lesson.slug },
+    props: { lesson },
+  }))
+}
+
+const { lesson } = Astro.props
+const idx = docker.lessons.findIndex((l) => l.slug === lesson.slug)
+const prev = idx > 0 ? docker.lessons[idx - 1] : null
+const next = idx < docker.lessons.length - 1 ? docker.lessons[idx + 1] : null
+
+const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; tip: string; tryit: string[] }> = {
+  '01-hello-world': {
+    queEs: 'docker run descarga una imagen (si no la tenés localmente) y crea un container que la ejecuta. hello-world es una imagen mínima cuyo único trabajo es imprimir "Hello from Docker!" y salir.',
+    cuando: 'Como smoke test después de instalar Docker. Para entender el flujo básico: descarga → container → ejecución → salida.',
+    ejemplo: '$ docker run hello-world\nUnable to find image \'hello-world:latest\' locally\nlatest: Pulling from library/hello-world\n[simulado] Hello from Docker!\nThis message shows that your installation appears to be working correctly.',
+    tip: 'Si ves "Hello from Docker!" Docker funciona. Si dice "permission denied", tu usuario no está en el grupo docker (sudo usermod -aG docker $USER y reinicia sesión).',
+    tryit: ['docker run hello-world', 'docker ps -a'],
+  },
+  '02-ps': {
+    queEs: 'docker ps lista los containers activos (corriendo ahora). Con -a (--all) muestra también los detenidos. Es tu herramienta principal para saber qué hay en ejecución.',
+    cuando: 'Antes de parar o borrar un container (necesitás el ID). Para confirmar que tu container arrancó. Para ver hace cuánto corre y qué puertos expone.',
+    ejemplo: '$ docker ps\nCONTAINER ID   IMAGE          COMMAND   CREATED       STATUS       PORTS     NAMES\na1b2c3d4e5f6   nginx:latest   "nginx"   2 hours ago   Up 2 hours   80/tcp    web',
+    tip: 'docker ps -a muestra todos (corriendo + detenidos). El CONTAINER ID es lo que usas para parar, borrar o inspeccionar un container.',
+    tryit: ['docker ps', 'docker ps -a'],
+  },
+  '03-images': {
+    queEs: 'docker images lista todas las imágenes descargadas localmente. Cada vez que hacés docker run, Docker guarda la imagen para no bajarla de nuevo.',
+    cuando: 'Para ver cuánto ocupan tus imágenes en disco. Para decidir cuáles borrar. Para ver qué tags tenés de cada imagen.',
+    ejemplo: '$ docker images\nREPOSITORY   TAG       IMAGE ID       CREATED       SIZE\nnginx        latest    a1b2c3d4e5f6   2 hours ago   187MB\nhello-world  latest    b7c5d4e3f2a1   3 months ago  13,3kB',
+    tip: 'Con el tiempo se acumulan imágenes y ocupan disco. docker image prune las borra. docker system prune borra todo lo no usado (cuidado).',
+    tryit: ['docker images', 'docker images | head'],
+  },
+  '04-pull': {
+    queEs: 'docker pull descarga una imagen de un registry (Docker Hub por defecto) y la guarda localmente, pero NO la ejecuta. Útil para pre-descargar o para verificar acceso.',
+    cuando: 'Antes de un deploy para verificar que la imagen existe. Para pre-cachear imágenes en un script de CI. Para bajar un tag específico (no "latest").',
+    ejemplo: '$ docker pull nginx\nUsing default tag: latest\nlatest: Pulling from library/nginx\nStatus: Downloaded newer image for nginx:latest',
+    tip: 'Por defecto usa el tag "latest". Para versiones específicas: docker pull nginx:1.24 o docker pull ubuntu:22.04.',
+    tryit: ['docker pull nginx', 'docker images'],
+  },
+  '05-run-d': {
+    queEs: 'Sin -d el container arranca y BLOQUEA tu terminal (queda en foreground). Con -d (detached) corre en background y te devuelve el control. Combinado con --name le das un nombre memorable.',
+    cuando: 'Cuando querés correr un servicio (web server, base de datos) que tiene que quedar activo. Para liberar tu terminal sin perder el container.',
+    ejemplo: '$ docker run -d --name web -p 8080:80 nginx:latest\na1b2c3d4e5f6...\n\n[simulado] Container "web" corriendo en background, puerto 8080 mapeado al 80 del container.',
+    tip: 'Forma común para servidores: docker run -d --name NOMBRE -p PUERTO_HOST:PUERTO_CONTAINER IMAGEN. El -p mapea puertos del host al container.',
+    tryit: ['docker run -d --name web nginx', 'docker ps'],
+  },
+  '06-stop-start': {
+    queEs: 'docker stop detiene un container (le envía SIGTERM, espera 10s, luego SIGKILL). docker start lo vuelve a arrancar (con la misma config). docker restart lo recicla.',
+    cuando: 'stop/start para pausar sin perder el container (los datos adentro se mantienen si hay volumes). restart después de cambios de config o cuando se colgó.',
+    ejemplo: '$ docker stop web\nweb\n\n$ docker start web\nweb\n\n$ docker restart web\nweb',
+    tip: 'stop envía SIGTERM (señal de cierre amable). Si no responde en 10s, envía SIGKILL. Para forzar: docker kill NOMBRE.',
+    tryit: ['docker ps', 'docker stop web', 'docker ps -a', 'docker start web', 'docker ps'],
+  },
+  '07-rm': {
+    queEs: 'docker rm borra un container DETENIDO. No funciona con containers corriendo (a menos que uses -f). No borra la imagen.',
+    cuando: 'Para limpiar containers viejos. Para recrear uno desde cero después de cambios. Después de un debug rápido que ya no necesitás.',
+    ejemplo: '$ docker rm web\nweb\n\n$ docker rm -f $(docker ps -aq)\n[simulado] Borrados todos los containers (forzado).',
+    tip: 'Si el container está corriendo, rm falla. Usa -f para forzar, o primero docker stop. docker container prune borra todos los detenidos.',
+    tryit: ['docker rm web', 'docker ps -a'],
+  },
+  '08-rmi': {
+    queEs: 'docker rmi (remove image) borra imágenes que ya no usás para liberar espacio. Falla si algún container la está usando. -f fuerza.',
+    cuando: 'Liberar espacio en disco. Limpiar después de cambios de versión. Para forzar una re-descarga (borra el cache local).',
+    ejemplo: '$ docker rmi nginx:latest\nUntagged: nginx:latest\n\n$ docker image prune -a\n[simulado] Borradas todas las imágenes sin uso.',
+    tip: 'Liberar espacio suele ser: docker container prune (containers parados) + docker image prune -a (imágenes no usadas).',
+    tryit: ['docker images', 'docker rmi hello-world', 'docker images'],
+  },
+  '09-logs': {
+    queEs: 'docker logs muestra stdout/stderr del proceso principal del container. Tu primer lugar a mirar cuando algo no anda ("no levanta", "se cierra solo").',
+    cuando: 'Después de un deploy que no funciona. Cuando un container arranca y muere. Para ver qué dice una app adentro del container.',
+    ejemplo: '$ docker logs web\n192.168.1.50 - - [19/Jun/2026:12:01:12 +0000] "GET / HTTP/1.1" 200 1234\n192.168.1.51 - - [19/Jun/2026:12:01:15 +0000] "GET /style.css HTTP/1.1" 200 567',
+    tip: 'docker logs -f NOMBRE sigue los logs en vivo (como tail -f). --tail 50 muestra las últimas 50 líneas. --since "10m" filtra por tiempo.',
+    tryit: ['docker logs web', 'docker logs --tail 10 web'],
+  },
+  '10-exec': {
+    queEs: 'docker exec ejecuta un comando ADENTRO de un container que ya está corriendo. Con -it abrís una shell interactiva como si estuvieras dentro del container.',
+    cuando: 'Para debuggear sin reiniciar el container. Para ver archivos de config adentro. Para correr herramientas que solo existen dentro del container.',
+    ejemplo: '$ docker exec -it web bash\nroot@a1b2c3d4:/# ls /\nbin  boot  dev  etc  home  lib  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var',
+    tip: '-it = interactivo + TTY (te da una shell usable). Para containers Alpine/minimal usa sh en lugar de bash. Para correr un comando puntual: docker exec web ls /.',
+    tryit: ['docker exec web ls /', 'docker exec web cat /etc/hostname'],
+  },
+  '11-build': {
+    queEs: 'docker build lee un Dockerfile y construye una imagen. -t NOMBRE:TAG le da una etiqueta. El . al final es el contexto (carpeta actual).',
+    cuando: 'Para empaquetar tu propia app en una imagen. Antes de un push a un registry. Como parte de un pipeline de CI/CD.',
+    ejemplo: '$ docker build -t mi-app:1.0 .\n[+] Building 12.3s (8/8) FINISHED\n => [simulado] Imagen mi-app:1.0 creada a partir de tu Dockerfile',
+    tip: '-t NOMBRE:TAG etiqueta la imagen. El . al final es el contexto (carpeta actual con el Dockerfile). Cada instrucción del Dockerfile es una "capa" cacheada.',
+    tryit: ['docker build -t mi-app:1.0 .', 'docker images'],
+  },
+  '12-compose': {
+    queEs: 'docker compose lee un archivo docker-compose.yml y levanta varios containers relacionados (web + db + cache) con un solo comando. Es el estándar para apps multi-servicio.',
+    cuando: 'Apps con varios servicios (web + base de datos). Dev environments reproducibles. Alternativa a Kubernetes para proyectos chicos.',
+    ejemplo: '$ docker compose up -d\n[+] Running 3/3\n ✔ Network myapp_default  Created\n ✔ Container myapp-web-1   Started\n ✔ Container myapp-db-1    Started',
+    tip: 'docker compose down detiene y borra todo. docker compose logs -f sigue logs de todos. docker compose ps lista servicios.',
+    tryit: ['docker compose ps', 'docker compose up -d', 'docker compose ps'],
+  },
+}
+
+const content = CONTENT[lesson.slug]
+---
+
+<BaseLayout title={lesson.title}>
+  <article class="lesson">
+    <header>
+      <span class="tag">lección {idx + 1} de {docker.lessons.length}</span>
+      <h1>{lesson.title}</h1>
+      <p class="lead">{lesson.description}</p>
+    </header>
+
+    <section class="block">
+      <h2>¿Qué es?</h2>
+      <p>{content.queEs}</p>
+    </section>
+
+    <section class="block">
+      <h2>¿Cuándo lo usas?</h2>
+      <p>{content.cuando}</p>
+    </section>
+
+    <section class="block">
+      <h2>Ejemplo</h2>
+      <pre><code>{content.ejemplo}</code></pre>
+    </section>
+
+    <section class="block tryit-block">
+      <h2>Pruébalo</h2>
+      <p>Ejecuta los comandos en esta terminal simulada. Escribe los tuyos también.</p>
+      <TryIt client:load initialCommands={content.tryit} />
+    </section>
+
+    {content.tip && (
+      <section class="block tip-block">
+        <h2>💡 Tip</h2>
+        <p>{content.tip}</p>
+      </section>
+    )}
+
+    <nav class="lesson-nav">
+      {prev ? (
+        <a href={`/cursos/docker/${prev.slug}`} class="prev">
+          ← {prev.title}
+        </a>
+      ) : <span></span>}
+      {next ? (
+        <a href={`/cursos/docker/${next.slug}`} class="next">
+          {next.title} →
+        </a>
+      ) : <span class="done">🎉 Última lección</span>}
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .lesson { max-width: 760px; margin: 0 auto; }
+  .lesson header { margin-bottom: 2rem; }
+  .lesson h1 { font-size: 2.4rem; margin: 0.4rem 0 0.8rem; }
+  .lead { font-size: 1.1rem; color: var(--ink-soft); }
+  .block { margin: 2rem 0; }
+  .block h2 { font-size: 1.5rem; color: var(--accent-dark); margin-bottom: 0.6rem; }
+  .tryit-block { background: var(--paper-warm); border: 2px solid var(--wood); border-radius: 12px; padding: 1.5rem; }
+  .tip-block { background: #fef3d7; border-left: 4px solid var(--accent); padding: 1rem 1.5rem; border-radius: 4px; }
+  .tip-block h2 { color: var(--accent-dark); margin-top: 0; }
+  .lesson-nav { display: flex; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 2rem; border-top: 2px dashed var(--wood); }
+  .lesson-nav a { text-decoration: none; color: var(--accent-dark); font-family: var(--font-hand); font-size: 1.05rem; font-weight: 700; padding: 0.5em 1em; border: 2px solid var(--wood); border-radius: 8px; transition: all 0.15s; }
+  .lesson-nav a:hover { background: var(--wood); color: var(--paper); }
+  .done { font-family: var(--font-hand); font-size: 1.05rem; color: var(--leaf-dark); padding: 0.5em 1em; }
+</style>

@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro'
-import { linuxBasico } from '@polar-school/content'
+import { linuxBasico, linuxIntermedio, docker as dockerCourse, tuPrimerVps } from '@polar-school/content'
+
+const featuredCourses = [linuxBasico, linuxIntermedio, dockerCourse, tuPrimerVps]
 ---
 
 <BaseLayout title="Inicio">
@@ -58,33 +60,17 @@ import { linuxBasico } from '@polar-school/content'
   <section class="tracks">
     <h2>Cursos disponibles</h2>
     <div class="track-list">
-      <a href={`/cursos/${linuxBasico.meta.slug}`} class="track-card">
-        <div class="track-header">
-          <span class="track-level">básico</span>
-          <span class="track-time">{linuxBasico.meta.estimatedHours}h · {linuxBasico.meta.totalLessons} lecciones</span>
-        </div>
-        <h3>{linuxBasico.meta.title}</h3>
-        <p>{linuxBasico.meta.description}</p>
-        <span class="track-arrow">Empezar →</span>
-      </a>
-      <div class="track-card disabled">
-        <div class="track-header">
-          <span class="track-level">básico</span>
-          <span class="track-time">próximamente</span>
-        </div>
-        <h3>Docker desde cero</h3>
-        <p>Imágenes, containers, docker run, docker compose. En español, con práctica real.</p>
-        <span class="track-arrow muted">—</span>
-      </div>
-      <div class="track-card disabled">
-        <div class="track-header">
-          <span class="track-level">intermedio</span>
-          <span class="track-time">próximamente</span>
-        </div>
-        <h3>Tu primer sitio en un VPS</h3>
-        <p>Compra un VPS, conéctate por SSH, instala Nginx, sirve tu web. Manual, sin plataforma.</p>
-        <span class="track-arrow muted">—</span>
-      </div>
+      {featuredCourses.map((course) => (
+        <a href={`/cursos/${course.meta.slug}`} class="track-card">
+          <div class="track-header">
+            <span class="track-level">{course.meta.level}</span>
+            <span class="track-time">{course.meta.estimatedHours}h · {course.meta.totalLessons} lecciones</span>
+          </div>
+          <h3>{course.meta.title}</h3>
+          <p>{course.meta.description}</p>
+          <span class="track-arrow">Empezar →</span>
+        </a>
+      ))}
     </div>
   </section>
 

@@ -1,0 +1,66 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import { docker } from '@polar-school/content'
+const { meta, lessons } = docker
+---
+
+<BaseLayout title={meta.title}>
+  <article class="curso">
+    <header>
+      <span class="tag">curso · {meta.level}</span>
+      <h1>{meta.title}</h1>
+      <p class="lead">{meta.description}</p>
+      <p class="meta">{lessons.length} lecciones · ~{meta.estimatedHours} h · práctica en navegador</p>
+    </header>
+
+    <section class="lecciones">
+      <h2>Lecciones</h2>
+      <ol>
+        {lessons.map((lesson, i) => (
+          <li>
+            <a href={`/cursos/docker/${lesson.slug}`}>
+              <span class="num">{String(i + 1).padStart(2, '0')}</span>
+              <span class="info">
+                <strong>{lesson.title}</strong>
+                <small>{lesson.description}</small>
+              </span>
+              <span class="cat">{lesson.category}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .curso { max-width: 760px; margin: 0 auto; }
+  .curso header { margin-bottom: 2rem; }
+  .curso h1 { font-size: 2.4rem; margin: 0.4rem 0 0.8rem; }
+  .lead { font-size: 1.1rem; color: var(--ink-soft); margin-bottom: 0.6rem; }
+  .meta { color: var(--ink-soft); font-size: 0.9rem; }
+  .lecciones h2 { color: var(--accent-dark); margin-bottom: 1rem; }
+  ol { list-style: none; padding: 0; }
+  ol li { margin: 0.6rem 0; }
+  ol li a {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 0.8rem 1rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: all 0.15s;
+  }
+  ol li a:hover { border-color: var(--accent); background: var(--paper-warm); }
+  .num {
+    font-family: var(--font-hand); font-size: 1.5rem; color: var(--accent);
+    min-width: 2.5rem; text-align: center;
+  }
+  .info { flex: 1; display: flex; flex-direction: column; gap: 0.2rem; }
+  .info strong { color: var(--ink); }
+  .info small { color: var(--ink-soft); font-size: 0.85rem; }
+  .cat {
+    font-size: 0.75rem; color: var(--ink-soft);
+    background: var(--paper-warm); padding: 0.2em 0.6em; border-radius: 999px;
+  }
+</style>

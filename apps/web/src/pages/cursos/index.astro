@@ -1,8 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro'
-import { linuxBasico } from '@polar-school/content'
+import { allCourses } from '@polar-school/content'
 
-const courses = [linuxBasico]
+const courses = allCourses
 ---
 
 <BaseLayout title="Cursos">
@@ -29,10 +29,10 @@ const courses = [linuxBasico]
     <div class="coming">
       <h3>Próximamente</h3>
       <ul>
-        <li>Docker desde cero (12 lecciones)</li>
-        <li>Tu primer sitio en un VPS (10 lecciones)</li>
         <li>Bases de datos SQL — MariaDB y Postgres (15 lecciones)</li>
-        <li>Linux intermedio — servicios, logs, systemd (10 lecciones)</li>
+        <li>Bash scripting (10 lecciones)</li>
+        <li>Git/GitHub desde cero (8 lecciones)</li>
+        <li>Docker intermedio — compose, networks, multi-stage (10 lecciones)</li>
       </ul>
     </div>
   </section>
