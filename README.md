@@ -6,8 +6,9 @@ Hecho en Panamá 🇵🇦 para LATAM. Open source, CC-BY-SA. Ver [VISION.md](./V
 
 ## Estado actual
 
-- **F0 (en desarrollo)**: monorepo base + 1 curso piloto "Linux básico — 20 comandos" con simulador en navegador
-- Próximas fases en VISION.md
+- **F0 (live)**: monorepo base + 1 curso piloto "Linux básico — 20 comandos" con simulador en navegador. 26 páginas estáticas, build de 576 KB.
+- **Live ahora**: ver [VISION.md](./VISION.md) §10 (fases)
+- **Próximas fases**: VISION.md
 
 ## Stack
 
@@ -60,8 +61,11 @@ Pendiente F0 → F1. El plan es:
 
 ## Licencia
 
-- **Código**: MIT
-- **Contenido educativo (`.mdx`, definiciones de cursos)**: CC-BY-SA 4.0
+**CC-BY-SA 4.0** — código y contenido. Ver [LICENSE](./LICENSE). Atribución requerida, obras derivadas deben mantener la misma licencia.
+
+## Contribuir
+
+PRs bienvenidos. Las lecciones viven en `packages/content/src/courses/` como archivos TypeScript tipados. Para agregar una lección, editá el array `lessons` del curso correspondiente (el tipado en `types.ts` te guía). Para un curso nuevo, creá un archivo nuevo en la misma carpeta y registralo en `packages/content/src/index.ts`.
 
 ## Créditos
 
