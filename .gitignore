@@ -34,3 +34,7 @@ Thumbs.db
 *.tsbuildinfo
 .vercel
 .netlify
+
+# dev database (no commitear; usar docker-compose.dev.yml)
+polar_pg_data/
+

@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro'
 import { tuPrimerVps } from '@polar-school/content'
-import { TryIt } from '@polar-school/ui'
+import { TryIt, MarkComplete } from '@polar-school/ui'
 
 export function getStaticPaths() {
   return tuPrimerVps.lessons.map((lesson) => ({
@@ -127,7 +127,9 @@ const content = CONTENT[lesson.slug]
       </section>
     )}
 
-    <nav class="lesson-nav">
+        <MarkComplete client:load courseSlug="tu-primer-vps" lessonSlug={lesson.slug} />
+
+<nav class="lesson-nav">
       {prev ? (
         <a href={`/cursos/tu-primer-vps/${prev.slug}`} class="prev">
           ← {prev.title}

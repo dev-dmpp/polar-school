@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro'
 import { linuxBasico } from '@polar-school/content'
-import { TryIt } from '@polar-school/ui'
+import { TryIt, MarkComplete } from '@polar-school/ui'
 
 export function getStaticPaths() {
   return linuxBasico.lessons.map((lesson) => ({
@@ -257,7 +257,9 @@ const content = CONTENT[lesson.slug]
       </section>
     )}
 
-    <nav class="lesson-nav">
+        <MarkComplete client:load courseSlug="linux-basico" lessonSlug={lesson.slug} />
+
+<nav class="lesson-nav">
       {prev ? (
         <a href={`/cursos/linux-basico/${prev.slug}`} class="prev">
           ← {prev.title}

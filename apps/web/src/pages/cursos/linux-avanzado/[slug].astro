@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro'
 import { linuxAvanzado } from '@polar-school/content'
-import { TryIt } from '@polar-school/ui'
+import { TryIt, MarkComplete } from '@polar-school/ui'
 
 export function getStaticPaths() {
   return linuxAvanzado.lessons.map((lesson) => ({
@@ -29,7 +29,7 @@ const next = idx < linuxAvanzado.lessons.length - 1 ? linuxAvanzado.lessons[idx 
     <section class="block">
       <h2>Prueba esto</h2>
       <div class="tryit-block">
-        <p class="tryit-hint">Escribe los comandos de abajo en la terminal. Si no dice qué probar, proba <code>{lesson.command}</code>.</p>
+        <p class="tryit-hint">Escribe los comandos de abajo en la terminal. Si no dice qué probar, prueba <code>{lesson.command}</code>.</p>
         <TryIt client:load command={lesson.command} example={lesson.example} />
       </div>
     </section>
@@ -50,7 +50,9 @@ const next = idx < linuxAvanzado.lessons.length - 1 ? linuxAvanzado.lessons[idx 
       </section>
     )}
 
-    <nav class="lesson-nav">
+        <MarkComplete client:load courseSlug="linux-avanzado" lessonSlug={lesson.slug} />
+
+<nav class="lesson-nav">
       {prev ? (
         <a href={`/cursos/linux-avanzado/${prev.slug}`} class="prev">← {prev.title}</a>
       ) : <span></span>}

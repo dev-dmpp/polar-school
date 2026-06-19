@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: polar-school-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: polar
+      POSTGRES_PASSWORD: polar_dev
+      POSTGRES_DB: polar_school
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - polar_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U polar -d polar_school"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.dev
+    container_name: polar-school-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://polar:polar_dev@postgres:5432/polar_school
+      NODE_ENV: development
+      PORT: "3001"
+      CORS_ORIGIN: "http://127.0.0.1:3000"
+      RESEND_API_KEY: "${RESEND_API_KEY:-}"
+      MAGIC_LINK_FROM: "${MAGIC_LINK_FROM:-Polar School <hola@polar.school>}"
+      MAGIC_LINK_BASE_URL: "${MAGIC_LINK_BASE_URL:-http://127.0.0.1:3000}"
+    ports:
+      - "127.0.0.1:3001:3001"
+
+volumes:
+  polar_pg_data:
+    name: polar_pg_data

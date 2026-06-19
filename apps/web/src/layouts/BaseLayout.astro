@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css'
+import { AuthButton } from '@polar-school/ui'
 
 interface Props {
   title: string
@@ -9,6 +10,8 @@ interface Props {
 const { title, description = 'Plataforma educativa gratuita en español sobre Linux, Docker, hosting y bases de datos.' } = Astro.props
 const pathname = Astro.url.pathname
 const isActive = (href: string) => pathname === href || (href !== '/' && pathname.startsWith(href))
+
+const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://127.0.0.1:3001'
 ---
 
 <!doctype html>
@@ -28,6 +31,10 @@ const isActive = (href: string) => pathname === href || (href !== '/' && pathnam
     <title>{title} · Polar School</title>
   </head>
   <body>
+    <script is:inline define:vars={{ apiUrl }}>
+      window.__POLAR_API_URL__ = apiUrl
+    </script>
+
     <header class="site-header">
       <div class="container header-inner">
         <a href="/" class="brand">
@@ -40,6 +47,9 @@ const isActive = (href: string) => pathname === href || (href !== '/' && pathnam
           <a href="/donar" class:list={[{ active: isActive('/donar') }]}>Donar</a>
           <a href="/sobre" class:list={[{ active: isActive('/sobre') }]}>Sobre</a>
         </nav>
+        <div class="auth-slot">
+          <AuthButton client:load />
+        </div>
       </div>
     </header>
 
@@ -110,6 +120,22 @@ const isActive = (href: string) => pathname === href || (href !== '/' && pathnam
   .nav a.active {
     color: var(--accent-dark);
     border-bottom-color: var(--accent);
+  }
+  .auth-slot {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+  }
+  @media (max-width: 640px) {
+    .header-inner {
+      flex-wrap: wrap;
+      row-gap: 0.6rem;
+    }
+    .auth-slot {
+      margin-left: 0;
+      width: 100%;
+      justify-content: flex-end;
+    }
   }
   .main {
     min-height: calc(100vh - 180px);

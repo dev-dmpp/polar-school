@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro'
 import { docker } from '@polar-school/content'
-import { TryIt } from '@polar-school/ui'
+import { TryIt, MarkComplete } from '@polar-school/ui'
 
 export function getStaticPaths() {
   return docker.lessons.map((lesson) => ({
@@ -141,7 +141,9 @@ const content = CONTENT[lesson.slug]
       </section>
     )}
 
-    <nav class="lesson-nav">
+        <MarkComplete client:load courseSlug="docker" lessonSlug={lesson.slug} />
+
+<nav class="lesson-nav">
       {prev ? (
         <a href={`/cursos/docker/${prev.slug}`} class="prev">
           ← {prev.title}

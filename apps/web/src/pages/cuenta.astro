@@ -1,0 +1,38 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import AccountPanel from '../components/AccountPanel.svelte'
+
+const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://127.0.0.1:3001'
+---
+
+<BaseLayout title="Mi cuenta" description="Tu progreso en Polar School.">
+  <script is:inline define:vars={{ apiUrl }}>
+    // Inyectamos la URL del API para los componentes Svelte que la leen
+    // desde window.__POLAR_API_URL__.
+    window.__POLAR_API_URL__ = apiUrl
+  </script>
+
+  <section class="hero">
+    <h1>Mi cuenta</h1>
+    <p class="lede">Aquí ves tu progreso guardado entre dispositivos.</p>
+  </section>
+
+  <AccountPanel client:load />
+</BaseLayout>
+
+<style>
+  .hero {
+    margin-bottom: 2rem;
+  }
+  .hero h1 {
+    font-family: var(--font-hand);
+    font-size: 2.5rem;
+    color: var(--ink);
+    margin: 0 0 0.4rem;
+  }
+  .lede {
+    color: var(--ink-soft);
+    font-size: 1.05rem;
+    margin: 0;
+  }
+</style>
