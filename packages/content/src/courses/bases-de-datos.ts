@@ -5,7 +5,7 @@ export const basesDeDatos: Course = {
     slug: 'bases-de-datos',
     title: 'Bases de datos SQL desde cero',
     description:
-      'Una base de datos guarda información de forma ordenada para que la consultes rápido. SQL es el lenguaje para hacerlo. En este curso aprendés los tres motores más usados (SQLite, MySQL, PostgreSQL) y los comandos esenciales: CREATE, INSERT, SELECT, WHERE, UPDATE, DELETE, JOIN.',
+      'Una base de datos guarda información de forma ordenada para que la consultes rápido. SQL es el lenguaje para hacerlo. En este curso aprendes los tres motores más usados (SQLite, MySQL, PostgreSQL) y los comandos esenciales: CREATE, INSERT, SELECT, WHERE, UPDATE, DELETE, JOIN.',
     level: 'intermedio',
     totalLessons: 10,
     estimatedHours: 5,
@@ -13,9 +13,9 @@ export const basesDeDatos: Course = {
   lessons: [
     {
       slug: '01-que-es-sql',
-      title: 'Qué es SQL y por qué lo necesitás',
+      title: 'Qué es SQL y por qué lo necesitas',
       description:
-        'SQL (Structured Query Language) es el lenguaje para hablar con bases de datos relacionales. En vez de guardar datos en archivos, los organizás en TABLAS con filas y columnas, y los consultás con queries.',
+        'SQL (Structured Query Language) es el lenguaje para hablar con bases de datos relacionales. En vez de guardar datos en archivos, los organizas en TABLAS con filas y columnas, y los consultas con queries.',
       command: 'sqlite3',
       difficulty: 'intermedio',
       category: 'sql',
@@ -28,7 +28,7 @@ export const basesDeDatos: Course = {
       slug: '02-create-table',
       title: 'CREATE TABLE — definir la estructura',
       description:
-        'Antes de guardar datos necesitás una tabla. CREATE TABLE define qué columnas tiene y qué tipo de dato guarda cada una (texto, número, fecha, etc.).',
+        'Antes de guardar datos necesitas una tabla. CREATE TABLE define qué columnas tiene y qué tipo de dato guarda cada una (texto, número, fecha, etc.).',
       command: 'sqlite3',
       difficulty: 'intermedio',
       category: 'sql',
@@ -48,7 +48,7 @@ export const basesDeDatos: Course = {
       readTime: 4,
       example:
         'sqlite3 test.db "INSERT INTO usuarios (nombre, email, edad) VALUES (\'Ana\', \'ana@ejemplo.com\', 28)"\nINSERT 0 1\n\nsqlite3 test.db "INSERT INTO usuarios (nombre, email, edad) VALUES (\'Beto\', \'beto@ejemplo.com\', 34)"\nINSERT 0 1',
-      tip: 'El "INSERT 0 1" significa: 0 filas ya estaban, 1 fila nueva insertada. Si pasás un id duplicado en una PRIMARY KEY, falla con error.',
+      tip: 'El "INSERT 0 1" significa: 0 filas ya estaban, 1 fila nueva insertada. Si pasas un id duplicado en una PRIMARY KEY, falla con error.',
     },
     {
       slug: '04-select',
@@ -61,7 +61,7 @@ export const basesDeDatos: Course = {
       readTime: 5,
       example:
         'sqlite3 test.db "SELECT * FROM usuarios"\nid | nombre | email           | edad\n---+--------+-----------------+-----\n1  | Ana    | ana@ejemplo.com | 28\n2  | Beto   | beto@ejemplo.com| 34\n\nsqlite3 test.db "SELECT nombre, edad FROM usuarios"\nnombre | edad\n-------+-----\nAna    | 28\nBeto   | 34',
-      tip: "SELECT * es tentador pero en apps reales conviene pedir solo las columnas que necesitás: es más rápido y menos propenso a errores.",
+      tip: "SELECT * es tentador pero en apps reales conviene pedir solo las columnas que necesitas: es más rápido y menos propenso a errores.",
     },
     {
       slug: '05-where',
@@ -113,7 +113,7 @@ export const basesDeDatos: Course = {
       readTime: 5,
       example:
         '# PostgreSQL\n$ psql -U polar -d mibase\npsql (16.3)\nmibase=# SELECT version();\n                                  version\n------------------------------------------------------------------\nPostgreSQL 16.3 on x86_64-pc-linux-gnu\n\n# MySQL\n$ mysql -u polar -p mibase\nmysql> SELECT VERSION();\n+---------+\n| VERSION |\n+---------+\n| 8.0.36  |\n+---------+',
-      tip: "Si recién empezás: SQLite (archivo local) → MySQL (web apps) → PostgreSQL (cuando necesitás tipos avanzados, JSON, geospatial).",
+      tip: "Si recién empiezas: SQLite (archivo local) → MySQL (web apps) → PostgreSQL (cuando necesitas tipos avanzados, JSON, geospatial).",
     },
     {
       slug: '09-join',

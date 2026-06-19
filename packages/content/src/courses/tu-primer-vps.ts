@@ -57,7 +57,7 @@ export const tuPrimerVps: Course = {
       category: 'permisos',
       readTime: 4,
       example: '$ sudo adduser deploy\nAgregando usuario \'deploy\'...\nCreando directorio home \'/home/deploy\'...\n[simulado — en un sistema real escribirías: passwd deploy]\n\n$ sudo usermod -aG sudo deploy',
-      tip: 'usermod -aG sudo le da permisos sudo al nuevo usuario. Después deshabilitás el login root editando /etc/ssh/sshd_config (PermitRootLogin no).',
+      tip: 'usermod -aG sudo le da permisos sudo al nuevo usuario. Después deshabilitas el login root editando /etc/ssh/sshd_config (PermitRootLogin no).',
     },
     {
       slug: '05-nginx',
@@ -99,7 +99,7 @@ export const tuPrimerVps: Course = {
       slug: '08-ufw',
       title: 'ufw — firewall básico',
       description:
-        'Un firewall bloquea todo el tráfico que no esperás. ufw es el firewall simple de Ubuntu. Activa SSH, HTTP y HTTPS, deja el resto cerrado.',
+        'Un firewall bloquea todo el tráfico que no esperas. ufw es el firewall simple de Ubuntu. Activa SSH, HTTP y HTTPS, deja el resto cerrado.',
       command: 'ufw',
       difficulty: 'intermedio',
       category: 'seguridad',

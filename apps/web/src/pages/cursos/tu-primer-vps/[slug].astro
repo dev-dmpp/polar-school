@@ -41,7 +41,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     queEs: 'adduser crea un usuario nuevo en el sistema. Por seguridad, siempre trabajas con un usuario no-root y solo usas sudo cuando necesitas permisos de administrador.',
     cuando: 'Inmediatamente después de comprar un VPS (entrar como root la primera vez para crear un usuario, después deshabilitar root). Cada vez que necesitas un usuario nuevo para un servicio.',
     ejemplo: '$ sudo adduser deploy\nAgregando usuario \'deploy\'...\nCreando directorio home \'/home/deploy\'...\n[simulado — en un sistema real escribirías: passwd deploy]\n\n$ sudo usermod -aG sudo deploy',
-    tip: 'usermod -aG sudo le da permisos sudo al nuevo usuario. Después deshabilitás el login root editando /etc/ssh/sshd_config (PermitRootLogin no).',
+    tip: 'usermod -aG sudo le da permisos sudo al nuevo usuario. Después deshabilitas el login root editando /etc/ssh/sshd_config (PermitRootLogin no).',
     tryit: ['adduser deploy', 'whoami'],
   },
   '05-nginx': {

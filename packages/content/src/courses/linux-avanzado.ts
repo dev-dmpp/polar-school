@@ -28,7 +28,7 @@ export const linuxAvanzado: Course = {
       slug: '02-kill',
       title: 'kill — terminar procesos',
       description:
-        'Cuando un proceso se cuelga o consume demasiada memoria, lo terminás con kill. Necesitás el PID que te da ps o top.',
+        'Cuando un proceso se cuelga o consume demasiada memoria, lo terminas con kill. Necesitas el PID que te da ps o top.',
       command: 'kill',
       difficulty: 'avanzado',
       category: 'procesos',
@@ -54,7 +54,7 @@ export const linuxAvanzado: Course = {
       slug: '04-chown',
       title: 'chown — cambiar el dueño de un archivo',
       description:
-        'chmod controla los permisos. chown controla QUIÉN es el dueño. Útil cuando subes archivos como root y necesitás que otro usuario los pueda editar.',
+        'chmod controla los permisos. chown controla QUIÉN es el dueño. Útil cuando subes archivos como root y necesitas que otro usuario los pueda editar.',
       command: 'chown',
       difficulty: 'avanzado',
       category: 'permisos',
@@ -100,7 +100,7 @@ export const linuxAvanzado: Course = {
       readTime: 4,
       example:
         '$ netstat -tulpn\nProto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name\ntcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      387/sshd\ntcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      612/nginx\ntcp        0      0 127.0.0.1:5432          0.0.0.0:*               LISTEN      890/postgres',
-      tip: "En sistemas nuevos ss es más rápido y muestra más info. Pero si leés un tutorial viejo con netstat, ya sabes interpretarlo.",
+      tip: "En sistemas nuevos ss es más rápido y muestra más info. Pero si lees un tutorial viejo con netstat, ya sabes interpretarlo.",
     },
     {
       slug: '08-ping',

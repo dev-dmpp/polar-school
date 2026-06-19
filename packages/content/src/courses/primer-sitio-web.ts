@@ -5,7 +5,7 @@ export const primerSitioWeb: Course = {
     slug: 'primer-sitio-web',
     title: 'Tu primer sitio web — HTML, CSS y deploy',
     description:
-      'Crear un sitio web hoy es más simple que nunca. En este curso armás uno desde cero con HTML, CSS y un poco de JavaScript. Después lo subes a internet gratis con GitHub Pages o Cloudflare Pages. Sin framework, sin servidor: archivos estáticos.',
+      'Crear un sitio web hoy es más simple que nunca. En este curso armas uno desde cero con HTML, CSS y un poco de JavaScript. Después lo subes a internet gratis con GitHub Pages o Cloudflare Pages. Sin framework, sin servidor: archivos estáticos.',
     level: 'basico',
     totalLessons: 10,
     estimatedHours: 4,

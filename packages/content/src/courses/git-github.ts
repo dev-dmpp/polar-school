@@ -100,7 +100,7 @@ export const gitGithub: Course = {
       readTime: 5,
       example:
         '$ git checkout main\n$ git merge feature-login\nMerge made by the \'ort\' strategy.\n src/auth.ts | 45 +++++++++++++++++++++++++++++++++++++++++++++\n 1 archivo cambiado, 45 inserciones(+)',
-      tip: 'Si Git no puede fusionar automáticamente (conflicto) te lo avisa y te deja editar los archivos marcados. Después corrés git add y git commit para terminar.',
+      tip: 'Si Git no puede fusionar automáticamente (conflicto) te lo avisa y te deja editar los archivos marcados. Después corres git add y git commit para terminar.',
     },
     {
       slug: '08-git-remote',
