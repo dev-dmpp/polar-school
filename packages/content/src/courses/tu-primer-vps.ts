@@ -27,7 +27,7 @@ export const tuPrimerVps: Course = {
       slug: '02-ssh',
       title: 'ssh — tu primera conexión al servidor',
       description:
-        'SSH te da una terminal remota en tu VPS. La usás para todo: instalar paquetes, editar archivos, ver logs, reiniciar servicios.',
+        'SSH te da una terminal remota en tu VPS. La usas para todo: instalar paquetes, editar archivos, ver logs, reiniciar servicios.',
       command: 'ssh',
       difficulty: 'intermedio',
       category: 'ssh',
@@ -51,7 +51,7 @@ export const tuPrimerVps: Course = {
       slug: '04-adduser',
       title: 'adduser — crear un usuario no-root',
       description:
-        'Trabajar siempre como root es peligroso (un comando mal escrito puede borrar el sistema). Crea un usuario normal y usá sudo cuando necesites root.',
+        'Trabajar siempre como root es peligroso (un comando mal escrito puede borrar el sistema). Crea un usuario normal y usa sudo cuando necesites root.',
       command: 'adduser',
       difficulty: 'intermedio',
       category: 'permisos',
@@ -93,19 +93,19 @@ export const tuPrimerVps: Course = {
       category: 'webserver',
       readTime: 6,
       example: '$ sudo nano /etc/nginx/sites-available/polar.school\n\nserver {\n    listen 80;\n    server_name polar.school www.polar.school;\n    root /var/www/polar.school;\n    index index.html;\n\n    location / {\n        try_files $uri $uri/ =404;\n    }\n}\n\n$ sudo ln -s /etc/nginx/sites-available/polar.school /etc/nginx/sites-enabled/\n$ sudo nginx -t\nnginx: la configuración es correcta\n$ sudo systemctl reload nginx',
-      tip: 'sites-available tiene configs, sites-enabled tiene symlinks a los activos. Así podés tener varios sitios sin que estén "prendidos" hasta que los actives.',
+      tip: 'sites-available tiene configs, sites-enabled tiene symlinks a los activos. Así puedes tener varios sitios sin que estén "prendidos" hasta que los actives.',
     },
     {
       slug: '08-ufw',
       title: 'ufw — firewall básico',
       description:
-        'Un firewall bloquea todo el tráfico que no esperás. ufw es el firewall simple de Ubuntu. Activá SSH, HTTP y HTTPS, dejá el resto cerrado.',
+        'Un firewall bloquea todo el tráfico que no esperás. ufw es el firewall simple de Ubuntu. Activa SSH, HTTP y HTTPS, deja el resto cerrado.',
       command: 'ufw',
       difficulty: 'intermedio',
       category: 'seguridad',
       readTime: 4,
       example: '$ sudo ufw allow OpenSSH\nRegla agregada\n\n$ sudo ufw allow \"Nginx Full\"\nRegla agregada\nRegla agregada (v6)\n\n$ sudo ufw enable\nEl firewall está activo y se inicia al arrancar el sistema\n\n$ sudo ufw status\nEstado: activo\n22/tcp                     ALLOW       Anywhere\n80/tcp                     ALLOW       Anywhere\n443/tcp                    ALLOW       Anywhere',
-      tip: 'Si activás ufw sin permitir SSH, te quedás afuera del servidor. SIEMPRE allow OpenSSH primero. Para resetear desde un KVM/IPMI: sudo ufw disable.',
+      tip: 'Si activas ufw sin permitir SSH, te quedas afuera del servidor. SIEMPRE allow OpenSSH primero. Para resetear desde un KVM/IPMI: sudo ufw disable.',
     },
     {
       slug: '09-certbot',
@@ -117,13 +117,13 @@ export const tuPrimerVps: Course = {
       category: 'seguridad',
       readTime: 5,
       example: '$ sudo apt install certbot python3-certbot-nginx -y\n$ sudo certbot --nginx -d polar.school -d www.polar.school\n\nSaving debug log to /var/log/letsencrypt/letsencrypt.log\nRequesting a certificate for polar.school and www.polar.school\n\nSuccessfully received certificate.\nCertificate is saved at: /etc/letsencrypt/live/polar.school/fullchain.pem\nKey is saved at:         /etc/letsencrypt/live/polar.school/privkey.pem\n\n[certbot también configura Nginx para redirigir HTTP → HTTPS]',
-      tip: 'certbot agrega un cronjob que renueva el certificado automáticamente cada 60 días. Verificá con: sudo certbot renew --dry-run.',
+      tip: 'certbot agrega un cronjob que renueva el certificado automáticamente cada 60 días. Verifica con: sudo certbot renew --dry-run.',
     },
     {
       slug: '10-git-deploy',
       title: 'Deploy con git pull — workflow simple',
       description:
-        'Para deployar cambios: commiteás localmente, hacés git pull en el servidor, Nginx recarga. Es el workflow mínimo que escala bastante bien.',
+        'Para deployar cambios: commiteás localmente, haces git pull en el servidor, Nginx recarga. Es el workflow mínimo que escala bastante bien.',
       command: 'git pull',
       difficulty: 'intermedio',
       category: 'deploy',
