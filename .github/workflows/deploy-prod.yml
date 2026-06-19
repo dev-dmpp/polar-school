@@ -1,0 +1,180 @@
+name: Deploy production
+
+# Prod = deploya SÓLO en tag v*. Rollback automático si smoke test falla.
+# Para deployar: git tag v1.0.0 && git push --tags
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag a deployar (ej: v1.0.0)'
+        required: true
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false  # NO cancelar deploys en prod.
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: ${{ steps.verify.outputs.url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'push' && github.ref || inputs.tag }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.3
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+        env:
+          PUBLIC_API_URL: ${{ secrets.PROD_PUBLIC_API_URL }}
+
+      # ---------- BACKUP ----------
+      - name: Backup database
+        id: backup
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          command_timeout: 5m
+          script: |
+            set -euo pipefail
+
+            BACKUP_FILE="/var/backups/polar-school/pre-deploy-$(date +%Y%m%d-%H%M%S).sql.gz"
+            mkdir -p /var/backups/polar-school
+
+            pg_dump "$PROD_DATABASE_URL" | gzip > "$BACKUP_FILE"
+            ls -lh "$BACKUP_FILE"
+
+            # Mantener sólo últimos 10 backups
+            ls -t /var/backups/polar-school/pre-deploy-*.sql.gz | tail -n +11 | xargs -r rm
+
+            echo "backup_file=$BACKUP_FILE" >> $GITHUB_OUTPUT
+        env:
+          PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+
+      # ---------- DEPLOY ----------
+      - name: Deploy
+        id: deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -euo pipefail
+
+            cd /home/${{ secrets.PROD_SSH_USER }}/polar-school
+
+            # Pull tag
+            git fetch --tags
+            TAG="${{ github.event_name == 'push' && github.ref_name || inputs.tag }}"
+            git checkout "$TAG"
+            git reset --hard "$TAG"
+
+            # Aplicar migrations (sólo nuevas)
+            pnpm --filter @polar-school/db migrate
+
+            # Rebuild
+            pnpm install --frozen-lockfile
+            pnpm build
+
+            # Restart con zero-downtime (pm2 reload)
+            pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
+            pm2 save
+
+      # ---------- HEALTH CHECK ----------
+      - name: Health checks
+        id: verify
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          command_timeout: 3m
+          script: |
+            set -euo pipefail
+
+            echo "Esperando que el servicio arranque..."
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:3001/health > /dev/null 2>&1; then
+                echo "✓ API health OK (intento $i)"
+                break
+              fi
+              sleep 2
+            done
+
+            # Smoke test final
+            curl -fsS http://127.0.0.1:3001/health
+            echo ""
+            curl -fsS http://127.0.0.1:3000/ -o /dev/null && echo "✓ Web OK"
+
+            echo "url=https://polar.school" >> $GITHUB_OUTPUT
+
+      # ---------- ROLLBACK (sólo si falla algo) ----------
+      - name: Rollback on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+
+            echo "::error::Deploy falló. Revirtiendo..."
+
+            cd /home/${{ secrets.PROD_SSH_USER }}/polar-school
+
+            # Volver al commit anterior
+            git checkout HEAD~1
+            pnpm install --frozen-lockfile
+            pnpm build
+            pm2 reload ecosystem.config.cjs
+
+            # Restaurar DB sólo si el log dice "schema" o "migration"
+            # (heurística: si la migración nueva alteró tablas, el rollback de
+            # código no basta). En general, sólo si lo hacés manual.
+
+            echo "::warning::Deploy revertido. Revisá logs. DB NO se revierte automáticamente."
+
+      - name: Notify
+        if: always()
+        uses: slackapi/slack-github-action@v2
+        continue-on-error: true
+        with:
+          payload: |
+            {
+              "text": "${{ job.status == 'success' && '✅ Deploy prod OK' || '❌ Deploy prod FALLÓ (revisá logs)' }} — ${{ github.ref_name }}\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
+          env:
+            SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

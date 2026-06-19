@@ -514,6 +514,7 @@ function chmod(ctx: SimContext, args: string[]): SimResult {
     return ok('')
   }
   const node = getNode(ctx, path)
+  if (!node) return err(`chmod: no se puede acceder a '${path}'`)
   return apply(node)
 }
 
@@ -695,7 +696,6 @@ function df(_ctx: SimContext, args: string[]): SimResult {
 
 function du(ctx: SimContext, args: string[]): SimResult {
   const human = args.includes('-h') || args.includes('-sh')
-  const summary = args.includes('-s')
   const paths = args.filter((a) => !a.startsWith('-'))
   if (paths.length === 0) return ok(human ? '4,0K\t.' : '4096\t.')
   const lines: string[] = []
@@ -734,7 +734,7 @@ const simulatedServices: Record<string, ServiceState> = {
   'ufw.service': { active: 'inactive', enabled: false, description: 'Uncomplicated firewall' },
 }
 
-function systemctl(ctx: SimContext, args: string[]): SimResult {
+function systemctl(_ctx: SimContext, args: string[]): SimResult {
   const action = args[0]
   if (!action || action === 'list-units') {
     const lines = ['UNIT                STATE   ACTIVE  DESCRIPTION']
@@ -863,7 +863,6 @@ function git(ctx: SimContext, args: string[]): SimResult {
   const sub = args[0]
   const g = ctx.git
   const hash = () => Math.random().toString(36).slice(2, 9)
-  const isInit = () => g.commits.length > 0 || g.remote !== null
 
   if (sub === 'init') {
     g.branches = ['main']
@@ -1149,7 +1148,7 @@ function envCmd(_ctx: SimContext, args: string[]): SimResult {
   return ok(`[simulado — 'env ${args.join(' ')}' ejecutaría el comando con esas variables]`)
 }
 
-function historyCmd(_ctx: SimContext, args: string[]): SimResult {
+function historyCmd(_ctx: SimContext): SimResult {
   if (_ctx.history.length === 0) return ok('')
   const lines = _ctx.history.slice(-20).map((cmd, i) => `  ${(_ctx.history.length - 20 + i + 1).toString().padStart(4)}  ${cmd}`)
   return ok(lines.join('\n'))
@@ -1169,7 +1168,6 @@ function sqlSelect(rows: TableRow[], query: string): SimResult {
   const trimmed = query.trim().replace(/;$/, '').replace(/\s+/g, ' ')
   const fromMatch = trimmed.match(/FROM\s+(\w+)/i)
   if (!fromMatch) return err('ERROR: se requiere FROM <tabla>')
-  const table = fromMatch[1].toLowerCase()
   let result = rows
   const whereMatch = trimmed.match(/WHERE\s+(.+?)(?:ORDER|GROUP|LIMIT|$)/i)
   if (whereMatch) {
@@ -1197,7 +1195,7 @@ function sqlSelect(rows: TableRow[], query: string): SimResult {
 function sqlInsert(rows: TableRow[], query: string): SimResult {
   const m = query.match(/INSERT\s+INTO\s+(\w+)\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i)
   if (!m) return err('ERROR: sintaxis INSERT incorrecta\nUso: INSERT INTO tabla (col1, col2) VALUES (val1, val2)')
-  const [, table, colsStr, valsStr] = m
+  const [, , colsStr, valsStr] = m
   const cols = colsStr.split(',').map((c) => c.trim())
   const vals = valsStr.split(',').map((v) => v.trim().replace(/^['"]|['"]$/g, ''))
   if (cols.length !== vals.length) return err('ERROR: número de columnas no coincide con valores')
@@ -1215,7 +1213,7 @@ function sqlCreate(query: string): string | null {
   return m ? m[1].toLowerCase() : null
 }
 
-function postgres(ctx: SimContext, args: string[]): SimResult {
+function postgres(_ctx: SimContext, args: string[]): SimResult {
   if (args.includes('--version') || args.includes('-V')) return ok('postgres (PostgreSQL) 16.3')
   return ok('Uso: psql -d <base> [comandos SQL]\nConectá a Postgres con: psql -U polar -d mibase')
 }
@@ -1387,7 +1385,7 @@ export function createSimulator() {
         groups: (a) => groups(ctx, a),
         which: (a) => which(ctx, a),
         env: (a) => envCmd(ctx, a),
-        history: (a) => historyCmd(ctx, a),
+        history: () => historyCmd(ctx),
         export: (a) => exportCmd(ctx, a),
         postgres: (a) => postgres(ctx, a),
         psql: (a) => psql(ctx, a),

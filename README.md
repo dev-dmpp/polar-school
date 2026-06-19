@@ -6,7 +6,11 @@ Hecho en Panamá 🇵🇦 para LATAM. Open source, CC-BY-SA. Ver [VISION.md](./V
 
 ## Estado actual
 
-- **F0 (live)**: monorepo base + 1 curso piloto "Linux básico — 20 comandos" con simulador en navegador. 26 páginas estáticas, build de 576 KB.
+- **F0**: monorepo base + 1 curso piloto "Linux básico — 20 comandos" con simulador en navegador.
+- **F1**: 8 cursos, 85 lecciones, 105 páginas estáticas, simulador con 60+ comandos.
+- **F2**: páginas legales, donar, sobre, dominio `polar.school` y Cloudflare Tunnel live.
+- **F3**: auth (email+contraseña con scrypt + magic link) + progreso de lecciones.
+- **F4 (en curso)**: CI/CD con GitHub Actions (staging automático, prod en tag).
 - **Live ahora**: ver [VISION.md](./VISION.md) §10 (fases)
 - **Próximas fases**: VISION.md
 
@@ -50,14 +54,25 @@ pnpm build
 pnpm start
 ```
 
-## Deploy (cuando esté listo)
+## Deploy
 
-Pendiente F0 → F1. El plan es:
+Tres workflows de GitHub Actions en `.github/workflows/`:
 
-1. Build local → assets en `apps/web/dist/`
-2. Copia al VPS vía SSH (rsync o GitHub Actions)
-3. `pm2 restart polar-school-web`
-4. Cloudflare Tunnel expone `localhost:3000` al público
+| Workflow | Trigger | Qué hace |
+|---|---|---|
+| `ci.yml` | PR y push a master | Lint, typecheck, build, tests, auditoría voseo. Postgres efímero. |
+| `deploy-staging.yml` | Push a master | Deploy a staging (rompible). Sin backup ni rollback. |
+| `deploy-prod.yml` | Tag `v*` (ej: `v1.0.0`) | Deploy a prod con backup de DB, health checks y rollback automático. |
+
+Ver `.github/SECRETS.md` para qué variables configurar en GitHub.
+
+Para deploy manual en VPS:
+
+```bash
+TAG=v1.0.0 ./scripts/deploy.sh production
+# o sin tag para staging:
+./scripts/deploy.sh staging
+```
 
 ## Licencia
 

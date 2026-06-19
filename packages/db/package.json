@@ -13,7 +13,8 @@
     "migrate": "drizzle-kit migrate",
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "echo 'no tests for db'"
   },
   "dependencies": {
     "drizzle-orm": "^0.36.4",

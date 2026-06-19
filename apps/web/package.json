@@ -8,6 +8,7 @@
     "build": "astro build",
     "preview": "astro preview --port 3000 --host 127.0.0.1",
     "typecheck": "astro check",
+    "test": "echo 'no tests for web'",
     "lint": "echo 'lint: web'",
     "clean": "rm -rf dist .astro .turbo"
   },

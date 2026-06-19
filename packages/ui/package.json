@@ -11,6 +11,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "test": "echo 'no tests for ui'",
     "lint": "echo 'lint: ui'",
     "build": "echo 'no build for ui'",
     "clean": "rm -rf dist .turbo"

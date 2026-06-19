@@ -1,0 +1,104 @@
+name: Deploy staging
+
+# Staging = entorno rompible, deploya automáticamente.
+# Si rompes algo, fix rápido en master.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    name: Deploy to staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: staging
+      url: ${{ steps.deploy.outputs.url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.3
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+        env:
+          PUBLIC_API_URL: ${{ secrets.STAGING_PUBLIC_API_URL }}
+
+      - name: Setup SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script_stop: true
+          command_timeout: 10m
+
+      - name: Deploy
+        id: deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+
+            cd /home/${{ secrets.STAGING_SSH_USER }}/polar-school-staging
+
+            # Pull código nuevo
+            git fetch origin master
+            git reset --hard origin/master
+
+            # .env (sólo si no existe)
+            if [ ! -f apps/api/.env ]; then
+              echo "ERROR: apps/api/.env no existe. Crear manualmente en staging." >&2
+              exit 1
+            fi
+
+            # Migrations (sólo nuevas)
+            pnpm --filter @polar-school/db migrate
+
+            # Rebuild y restart
+            pnpm install --frozen-lockfile
+            pnpm build
+            pm2 restart polar-school-staging || pm2 start ecosystem.config.cjs
+
+            # Health checks (no fallar el deploy si smoke test falla)
+            set +e
+            sleep 5
+            curl -fsS http://127.0.0.1:3001/health
+            STAGING_HEALTH=$?
+            curl -fsS http://127.0.0.1:3000/ -o /dev/null
+            STAGING_WEB=$?
+            set -e
+
+            if [ $STAGING_HEALTH -ne 0 ] || [ $STAGING_WEB -ne 0 ]; then
+              echo "::warning::Smoke tests fallaron (api=$STAGING_HEALTH web=$STAGING_WEB)"
+            fi
+
+            echo "url=https://staging.polar.school" >> $GITHUB_OUTPUT
