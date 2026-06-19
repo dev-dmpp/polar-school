@@ -586,6 +586,16 @@ function uniq(ctx: SimContext, args: string[]): SimResult {
 }
 
 function tar(ctx: SimContext, args: string[]): SimResult {
+  // Desempaca flags agrupados: '-czf' -> ['-c', '-z', '-f'], '-xzf' -> ['-x', '-z', '-f']
+  const expanded: string[] = []
+  for (const a of args) {
+    if (a.length > 2 && a[0] === '-' && a[1] !== '-' && !a.includes('=')) {
+      expanded.push(...a.slice(1).split('').map((c) => '-' + c))
+    } else {
+      expanded.push(a)
+    }
+  }
+  args = expanded
   const create = args.includes('-c')
   const extract = args.includes('-x')
   const list = args.includes('-t')
@@ -824,9 +834,15 @@ function nano(_ctx: SimContext, args: string[]): SimResult {
 function docker(_ctx: SimContext, args: string[]): SimResult {
   const action = args[0]
   if (!action) return err('docker: falta comando\nUso: docker [run|ps|images|pull|stop|start|rm|rmi|logs|exec|build]')
+  // Positional args = no-flags, no-puertos con :, no-key=val
+  const positional = args.filter((a, i) => i > 0 && !a.startsWith('-') && !a.includes(':') && !a.includes('='))
+  const last = positional[positional.length - 1]
   if (action === 'run') {
-    const image = args.find((a) => !a.startsWith('-') && a !== 'run') ?? 'hello-world'
-    return ok(`Unable to find image '${image}:latest' locally\nlatest: Pulling from library/${image}\n[simulado — docker real descargaría y correría ${image}]\n\nHello from Docker!\nThis message shows that your installation appears to be working correctly.`)
+    const image = last ?? 'hello-world'
+    const portFlag = args.find((a) => a.startsWith('-p'))
+    const detached = args.includes('-d')
+    const port = portFlag ? portFlag.replace(/^-p\s*/, '') : ''
+    return ok(`Unable to find image '${image}:latest' locally\nlatest: Pulling from library/${image}\n[simulado — docker real descargaría ${image}${port ? ` y publicaría en ${port}` : ''}${detached ? ' en segundo plano' : ''}]\n\n${image === 'hello-world' ? 'Hello from Docker!\nThis message shows that your installation appears to be working correctly.' : `Container basado en ${image} simulado. En docker real verías el log del proceso principal.`}`)
   }
   if (action === 'ps') {
     return ok(`CONTAINER ID   IMAGE          COMMAND   CREATED       STATUS       PORTS     NAMES\na1b2c3d4e5f6   nginx:latest   "nginx"   2 hours ago   Up 2 hours   80/tcp    web\n[simulado]`)
@@ -835,12 +851,28 @@ function docker(_ctx: SimContext, args: string[]): SimResult {
     return ok(`REPOSITORY   TAG       IMAGE ID       CREATED       SIZE\nnginx        latest    a1b2c3d4e5f6   2 hours ago   187MB\nhello-world  latest    b7c5d4e3f2a1   3 months ago  13,3kB\n[simulado]`)
   }
   if (action === 'pull') {
-    const image = args[1] ?? 'nginx'
+    const image = last ?? 'nginx'
     return ok(`Using default tag: latest\nlatest: Pulling from library/${image}\nStatus: Downloaded newer image for ${image}:latest\n[simulado]`)
   }
-  if (['stop', 'start', 'restart', 'rm', 'rmi', 'logs', 'exec', 'build'].includes(action)) {
-    const target = args[1] ?? 'a1b2c3d4'
+  if (action === 'compose') {
+    const sub = args[1]
+    const detached = args.includes('-d')
+    if (sub === 'up' || sub === 'down') {
+      return ok(`[+] ${sub === 'up' ? 'Running' : 'Going'} 2/2\n ✔ Network web_default   ${sub === 'up' ? 'Created' : 'Removed'}\n ✔ Container web-nginx   ${sub === 'up' ? 'Started' : 'Removed'}\n[simulado — docker compose real orquestó los servicios del docker-compose.yml${detached ? ' (detached)' : ''}]`)
+    }
+    return ok(`docker compose ${sub ?? ''}: simulado`)
+  }
+  if (['stop', 'start', 'restart', 'rm', 'rmi', 'logs'].includes(action)) {
+    const target = last ?? 'nginx'
     return ok(`${target}\n[simulado — docker real haría '${action}' sobre ${target}]`)
+  }
+  if (action === 'exec') {
+    const container = positional[0] ?? 'nginx'
+    return ok(`${container}\n[simulado — docker real haría 'exec' dentro de ${container}]`)
+  }
+  if (action === 'build') {
+    const path = last ?? '.'
+    return ok(`Sending build context to Docker daemon: ${path}\n[simulado — docker real compilaría la imagen desde ${path}]`)
   }
   return err(`docker: comando desconocido '${action}'`)
 }
