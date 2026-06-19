@@ -24,7 +24,24 @@ interface SimContext {
   fs: FSNode
   env: Record<string, string>
   history: string[]
+  git: {
+    branch: string
+    branches: string[]
+    remote: string | null
+    commits: { hash: string; msg: string; author: string }[]
+    staged: Set<string>
+    user: string
+    email: string
+    initialized: boolean
+  }
+  db: {
+    postgres: Map<string, TableRow[]>
+    mysql: Map<string, TableRow[]>
+    sqlite: Map<string, TableRow[]>
+  }
 }
+
+interface TableRow { [col: string]: string | number | null }
 
 const HOME = '/home/polar'
 
@@ -152,6 +169,21 @@ function createInitialContext(): SimContext {
       LANG: 'es_PA.UTF-8',
     },
     history: [],
+    git: {
+      branch: 'main',
+      branches: ['main'],
+      remote: null,
+      commits: [],
+      staged: new Set<string>(),
+      user: 'polar',
+      email: 'polar@polar.school',
+      initialized: false,
+    },
+    db: {
+      postgres: new Map<string, TableRow[]>(),
+      mysql: new Map<string, TableRow[]>(),
+      sqlite: new Map<string, TableRow[]>(),
+    },
   }
 }
 
@@ -465,31 +497,52 @@ function findCmd(ctx: SimContext, args: string[]): SimResult {
 }
 
 function chmod(ctx: SimContext, args: string[]): SimResult {
-  if (args.length < 2) return err('chmod: modo y archivo requeridos')
-  const modeStr = args[0]
-  const path = args[1]
+  const recursive = args.includes('-R') || args.includes('-r')
+  const filtered = args.filter((a) => a !== '-R' && a !== '-r')
+  if (filtered.length < 2) return err('chmod: modo y archivo requeridos')
+  const modeStr = filtered[0]
+  const path = filtered[1]
   const mode = parseInt(modeStr, 8)
   if (isNaN(mode)) return err(`chmod: modo inválido: '${modeStr}'`)
+  const apply = (node: FSNode): SimResult => {
+    if (!node) return err(`chmod: no se puede acceder a '${path}'`)
+    node.mode = mode
+    node.mtime = Date.now()
+    if (recursive && node.type === 'dir' && node.children) {
+      for (const child of Object.values(node.children)) apply(child)
+    }
+    return ok('')
+  }
   const node = getNode(ctx, path)
-  if (!node) return err(`chmod: no se puede acceder a '${path}'`)
-  node.mode = mode
-  node.mtime = Date.now()
-  return ok('')
+  return apply(node)
 }
 
-function ps(_ctx: SimContext): SimResult {
+function ps(_ctx: SimContext, args: string[]): SimResult {
+  if (args.includes('aux') || args.includes('-ef')) {
+    return ok(
+      'USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\n' +
+      'root         1  0.0  0.1 168920 11844 ?        Ss   Jun15   0:01 /sbin/init\n' +
+      'root       387  0.0  0.2  72340  9324 ?        Ss   Jun15   0:00 sshd: /usr/sbin/sshd\n' +
+      'polar      421  0.0  0.1  21032  5120 pts/0    Ss   10:00   0:00 -bash\n' +
+      'polar      587  0.0  0.0  38820  3456 pts/0    R+   12:34   0:00 ps aux\n' +
+      'www-data   612  0.1  0.5 142432 22456 ?        S    11:22   0:04 nginx: worker process'
+    )
+  }
   return ok(
     '  PID TTY          TIME CMD\n' +
     '    1 ?        00:00:01 systemd\n' +
-      '  142 ?        00:00:00 sshd\n' +
-      '  387 pts/0    00:00:00 bash\n' +
-      '  421 pts/0    00:00:00 ps'
+    '  142 ?        00:00:00 sshd\n' +
+    '  387 pts/0    00:00:00 bash\n' +
+    '  421 pts/0    00:00:00 ps'
   )
 }
 
 function kill(_ctx: SimContext, args: string[]): SimResult {
   if (args.length === 0) return err('kill: falta PID')
-  return ok('')
+  const force = args.includes('-9') || args.includes('-KILL') || args.includes('-SIGKILL')
+  const pid = args.filter((a) => !a.startsWith('-'))[0]
+  if (!pid || isNaN(Number(pid))) return err(`kill: argumento inválido: '${pid}'`)
+  return ok(`[simulado] Proceso ${pid} ${force ? 'terminado forzosamente (SIGKILL)' : 'terminado (SIGTERM)'}`)
 }
 
 function man(_ctx: SimContext, args: string[]): SimResult {
@@ -807,23 +860,137 @@ function wget(_ctx: SimContext, args: string[]): SimResult {
 }
 
 function git(ctx: SimContext, args: string[]): SimResult {
-  const cmd = args[0]
-  if (cmd === 'status') {
-    return ok(`En la rama main\nTu rama está actualizada con 'origin/main'.\n\nnada para hacer commit, el árbol de trabajo está limpio`)
+  const sub = args[0]
+  const g = ctx.git
+  const hash = () => Math.random().toString(36).slice(2, 9)
+  const isInit = () => g.commits.length > 0 || g.remote !== null
+
+  if (sub === 'init') {
+    g.branches = ['main']
+    g.branch = 'main'
+    g.remote = null
+    g.commits = []
+    g.staged = new Set()
+    g.initialized = true
+    return ok(`Inicializado repositorio Git vacío en ${ctx.cwd}/.git/`)
   }
-  if (cmd === 'log') {
-    return ok(`commit abc123 (HEAD -> main)\nAuthor: polar <polar@polar.school>\nDate:   Mon Jun 19 12:00:00 2026\n\n    Initial commit`)
+  if (sub === 'status') {
+    if (!g.initialized) return ok(`fatal: no es un repositorio git (ni ninguno de los directorios superiores): .git\nSugerencia: ejecuta 'git init' primero.`)
+    const staged = Array.from(g.staged)
+    const lines: string[] = []
+    lines.push(`En la rama ${g.branch}`)
+    if (!g.remote) {
+      lines.push(`Tu rama está basada en '${g.branch}', pero no hay información de upstream.`)
+      lines.push(`Sugerencia: ejecuta 'git push -u origin ${g.branch}' para publicar la rama.`)
+    }
+    lines.push(``)
+    if (staged.length === 0) lines.push(`nada para hacer commit, el árbol de trabajo está limpio`)
+    else {
+      lines.push(`Cambios a confirmar:`)
+      lines.push(`  nuevo archivo:   ${staged.join('\n  nuevo archivo:   ')}`)
+    }
+    if (g.commits.length > 0 && staged.length === 0) {
+      lines.push(``)
+      lines.push(`Tu rama está ${Math.floor(Math.random() * 3)} commits ahead de 'origin/${g.branch}'.`)
+    }
+    return ok(lines.join('\n'))
   }
-  if (cmd === 'pull') {
+  if (sub === 'add') {
+    if (!g.initialized) return err(`fatal: no es un repositorio git`)
+    const targets = args.slice(1)
+    if (targets.length === 0) return err('git add: falta ruta de archivo')
+    for (const t of targets) {
+      if (t === '.' || t === '-A' || t === '--all') {
+        g.staged = new Set(['.'])
+      } else {
+        g.staged.add(t)
+      }
+    }
+    return ok('')
+  }
+  if (sub === 'commit') {
+    if (!g.initialized) return err(`fatal: no es un repositorio git`)
+    const mIdx = args.indexOf('-m')
+    const msg = mIdx >= 0 && args[mIdx + 1] ? args[mIdx + 1] : null
+    if (!msg) return err('git commit: usa -m "mensaje" para describir el cambio')
+    if (g.staged.size === 0) return err('git commit: nada para confirmar (usa git add primero)')
+    const h = hash()
+    g.commits.push({ hash: h, msg, author: `${g.user} <${g.email}>` })
+    g.staged = new Set()
+    return ok(`[${g.branch} ${h}] ${msg}\n 1 archivo cambiado, ${Math.floor(Math.random() * 50) + 1} inserciones(+)\n Autor: ${g.user} <${g.email}>`)
+  }
+  if (sub === 'log') {
+    if (!g.initialized) return err(`fatal: no es un repositorio git`)
+    if (g.commits.length === 0) return ok('(vacío — no hay commits todavía)')
+    const lines = g.commits.slice().reverse().map((c) => `commit ${c.hash} (HEAD -> ${g.branch})\nAuthor: ${c.author}\n\n    ${c.msg}`)
+    return ok(lines.join('\n\n'))
+  }
+  if (sub === 'branch') {
+    if (args.length === 1) {
+      return ok(g.branches.map((b) => (b === g.branch ? `* ${b}` : `  ${b}`)).join('\n'))
+    }
+    const name = args[1]
+    if (g.branches.includes(name)) return err(`fatal: ya existe una rama llamada '${name}'`)
+    g.branches.push(name)
+    return ok('')
+  }
+  if (sub === 'checkout') {
+    const newBranch = args[1]
+    if (args.includes('-b')) {
+      const name = args[args.indexOf('-b') + 1]
+      if (!name) return err('git checkout -b: falta nombre de rama')
+      if (g.branches.includes(name)) return err(`fatal: ya existe una rama llamada '${name}'`)
+      g.branches.push(name)
+      g.branch = name
+      return ok(`Cambiaste a una nueva rama '${name}'`)
+    }
+    if (!newBranch) return err('git checkout: falta nombre de rama o commit')
+    if (!g.branches.includes(newBranch)) return err(`error: pathspec '${newBranch}' no coincide con ningún archivo conocido por git`)
+    g.branch = newBranch
+    return ok(`Cambiaste a la rama '${newBranch}'`)
+  }
+  if (sub === 'merge') {
+    const target = args[1]
+    if (!target) return err('git merge: falta nombre de rama')
+    if (!g.branches.includes(target)) return err(`fatal: '${target}' — no es algo que se pueda fusionar`)
+    if (target === g.branch) return err('git merge: ya estás en esa rama')
+    return ok(`Merge made by the 'ort' strategy.\n[simulado — fusionaría los commits de ${target} en ${g.branch}]`)
+  }
+  if (sub === 'remote') {
+    if (args[1] === 'add') {
+      const name = args[2]
+      const url = args[3]
+      if (!name || !url) return err('git remote add: falta nombre o URL')
+      g.remote = url
+      return ok('')
+    }
+    if (args[1] === '-v' || !args[1]) {
+      if (!g.remote) return ok('')
+      return ok(`origin\t${g.remote} (fetch)\norigin\t${g.remote} (push)`)
+    }
+    return ok(`git remote ${args.slice(1).join(' ')}: simulado`)
+  }
+  if (sub === 'push') {
+    if (!g.remote) return err(`fatal: no hay un 'origin' configurado. Usa 'git remote add origin URL' primero.`)
+    const ahead = g.staged.size === 0 && g.commits.length
+    return ok(`Objeto ${ahead ? 'commits' : 'cambios'}: ${g.commits.length || 1}, hecho.\nDelta compression using up to 4 threads.\nTotal ${g.commits.length || 1} (delta 0), reused 0 (delta 0), pack-reused 0\nTo ${g.remote}\n   abc1234..${hash()}  ${g.branch} -> ${g.branch}`)
+  }
+  if (sub === 'pull') {
+    if (!g.remote) return err(`fatal: no hay 'origin' configurado`)
     return ok(`Ya está actualizado.`)
   }
-  if (cmd === 'clone') {
+  if (sub === 'clone') {
     const url = args[1]
     if (!url) return err('git clone: falta URL')
     const name = url.split('/').pop()?.replace('.git', '') ?? 'repo'
     return ok(`Clonando en '${name}'...\nremote: Enumerando objetos: 42, hecho.\nRecibiendo objetos: 100% (42/42), hecho.\n[simulado]`)
   }
-  return ok(`git ${cmd}: simulado — en un repo real ejecutaría: ${args.join(' ')}`)
+  if (sub === 'diff') {
+    return ok(g.staged.size > 0
+      ? `diff --git a/${Array.from(g.staged)[0]} b/${Array.from(g.staged)[0]}\n+ cambios sin confirmar [simulado]`
+      : `(sin cambios — usa 'git add archivo' para empezar a trackear)`)
+  }
+  return ok(`git ${sub}: simulado — en un repo real ejecutaría: ${args.join(' ')}`)
 }
 
 function nano(_ctx: SimContext, args: string[]): SimResult {
@@ -887,6 +1054,274 @@ function nginx(_ctx: SimContext, args: string[]): SimResult {
   return ok('[simulado — nginx real arrancaría el servidor en foreground]')
 }
 
+// ===== F2: Git, redes, permisos, cron, bases de datos =====
+
+function chown(ctx: SimContext, args: string[]): SimResult {
+  const recursive = args.includes('-R')
+  const filtered = args.filter((a) => a !== '-R')
+  if (filtered.length < 2) return err('chown: propietario y archivo requeridos\nUso: chown [-R] usuario[:grupo] archivo')
+  const [owner, path] = filtered
+  const user = owner.split(':')[0]
+  const node = getNode(ctx, path)
+  if (!node) return err(`chown: no se puede acceder a '${path}'`)
+  node.owner = user
+  node.mtime = Date.now()
+  if (recursive && node.type === 'dir' && node.children) {
+    for (const child of Object.values(node.children)) {
+      child.owner = user
+    }
+  }
+  return ok('')
+}
+
+function ss(_ctx: SimContext, args: string[]): SimResult {
+  if (args.includes('-tulpn') || args.includes('-tlnp') || args.includes('-tuln')) {
+    return ok(`State     Recv-Q  Send-Q   Local Address:Port     Peer Address:Port   Process\nLISTEN    0       128            0.0.0.0:22            0.0.0.0:*       users:(("sshd",pid=387,fd=3))\nLISTEN    0       511            0.0.0.0:80            0.0.0.0:*       users:(("nginx",pid=612,fd=6))\nLISTEN    0       4096           127.0.0.1:5432        0.0.0.0:*       users:(("postgres",pid=890,fd=4))\nLISTEN    0       80             127.0.0.1:3306        0.0.0.0:*       users:(("mysqld",pid=901,fd=5))\nLISTEN    0       128            [::]:22                 [::]:*          users:(("sshd",pid=387,fd=4))\nLISTEN    0       511            [::]:443                [::]:*          users:(("nginx",pid=612,fd=7))`)
+  }
+  return ok('Uso típico: ss -tulpn (TCP+UDP escuchando, con procesos)')
+}
+
+function netstat(_ctx: SimContext, args: string[]): SimResult {
+  if (args.includes('-tulpn') || args.includes('-tln')) {
+    return ok(`Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name\ntcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      387/sshd\ntcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      612/nginx\ntcp        0      0 127.0.0.1:5432          0.0.0.0:*               LISTEN      890/postgres\ntcp6       0      0 :::443                   :::*                    LISTEN      612/nginx`)
+  }
+  return ok('Uso típico: netstat -tulpn (puertos abiertos)')
+}
+
+function ping(_ctx: SimContext, args: string[]): SimResult {
+  const host = args.filter((a) => !a.startsWith('-'))[0]
+  if (!host) return err('ping: falta host\nUso: ping [-c N] host')
+  const count = (() => {
+    const i = args.indexOf('-c')
+    return i >= 0 && args[i + 1] ? parseInt(args[i + 1], 10) : 4
+  })()
+  const lines = [`PING ${host} (93.184.216.34) 56(84) bytes of data.`]
+  for (let i = 0; i < Math.min(count, 5); i++) {
+    lines.push(`64 bytes from ${host}: icmp_seq=${i + 1} ttl=56 time=${(Math.random() * 50 + 10).toFixed(1)} ms`)
+  }
+  lines.push(``, `--- ${host} ping statistics ---`, `${count} packets transmitted, ${count} received, 0% packet loss`)
+  return ok(lines.join('\n'))
+}
+
+function crontab(_ctx: SimContext, args: string[]): SimResult {
+  if (args.includes('-l')) {
+    return ok(`# m h dom mon dow command\n0 3 * * * /usr/local/bin/backup.sh\n*/15 * * * * /usr/bin/php /var/www/cron.php\n@reboot systemctl restart nginx.service`)
+  }
+  if (args.includes('-e')) {
+    return ok(`crontab: installing new crontab\n[simulado — en una sesión real abriría el editor (vi/nano) para editar las tareas programadas]`)
+  }
+  if (args.includes('-r')) {
+    return ok(`crontab: crontab de ${_ctx.env.USER} borrado [simulado]`)
+  }
+  return ok('Uso: crontab [-e editar | -l listar | -r borrar]\nFormato: m h dom mon dow comando')
+}
+
+function useradd(_ctx: SimContext, args: string[]): SimResult {
+  const filtered = args.filter((a) => !a.startsWith('-'))
+  const user = filtered[0]
+  if (!user) return err('useradd: falta nombre de usuario')
+  return ok(`[simulado] Usuario '${user}' creado. En useradd real, agregalo con -m para crear el home directory.`)
+}
+
+function groupadd(_ctx: SimContext, args: string[]): SimResult {
+  const filtered = args.filter((a) => !a.startsWith('-'))
+  const group = filtered[0]
+  if (!group) return err('groupadd: falta nombre de grupo')
+  return ok(`[simulado] Grupo '${group}' creado.`)
+}
+
+function groups(_ctx: SimContext, args: string[]): SimResult {
+  const user = args[0] ?? _ctx.env.USER
+  if (user === 'root') return ok('root : root')
+  if (user === 'polar') return ok('polar : polar sudo www-data docker')
+  return ok(`${user} : ${user}`)
+}
+
+function which(_ctx: SimContext, args: string[]): SimResult {
+  const cmd = args[0]
+  if (!cmd) return err('which: falta comando')
+  const known = ['ls', 'cat', 'cd', 'pwd', 'mkdir', 'touch', 'rm', 'cp', 'mv', 'echo', 'grep', 'find', 'chmod', 'ps', 'kill', 'man', 'systemctl', 'journalctl', 'service', 'adduser', 'ufw', 'apt', 'ssh', 'scp', 'curl', 'wget', 'git', 'nano', 'docker', 'nginx', 'postgres', 'psql', 'mysql', 'sqlite3', 'node', 'python3', 'tar', 'df', 'du', 'free', 'top', 'crontab', 'ping']
+  return known.includes(cmd) ? ok(`/usr/bin/${cmd}`) : err(`which: no ${cmd} en (${_ctx.env.PATH})`)
+}
+
+function envCmd(_ctx: SimContext, args: string[]): SimResult {
+  if (args.length === 0) return ok(Object.entries(_ctx.env).map(([k, v]) => `${k}=${v}`).join('\n'))
+  return ok(`[simulado — 'env ${args.join(' ')}' ejecutaría el comando con esas variables]`)
+}
+
+function historyCmd(_ctx: SimContext, args: string[]): SimResult {
+  if (_ctx.history.length === 0) return ok('')
+  const lines = _ctx.history.slice(-20).map((cmd, i) => `  ${(_ctx.history.length - 20 + i + 1).toString().padStart(4)}  ${cmd}`)
+  return ok(lines.join('\n'))
+}
+
+function exportCmd(ctx: SimContext, args: string[]): SimResult {
+  for (const a of args) {
+    const [k, v] = a.split('=')
+    if (k && v !== undefined) ctx.env[k] = v
+  }
+  return ok('')
+}
+
+// ===== Bases de datos SQL =====
+
+function sqlSelect(rows: TableRow[], query: string): SimResult {
+  const trimmed = query.trim().replace(/;$/, '').replace(/\s+/g, ' ')
+  const fromMatch = trimmed.match(/FROM\s+(\w+)/i)
+  if (!fromMatch) return err('ERROR: se requiere FROM <tabla>')
+  const table = fromMatch[1].toLowerCase()
+  let result = rows
+  const whereMatch = trimmed.match(/WHERE\s+(.+?)(?:ORDER|GROUP|LIMIT|$)/i)
+  if (whereMatch) {
+    const cond = whereMatch[1].trim()
+    const m = cond.match(/(\w+)\s*=\s*['"]?([^'"]+)['"]?/i)
+    if (m) {
+      const [, col, val] = m
+      result = result.filter((r) => String(r[col]) === val)
+    } else {
+      const m2 = cond.match(/(\w+)\s*>\s*(\d+)/)
+      if (m2) {
+        const [, col, val] = m2
+        result = result.filter((r) => Number(r[col]) > Number(val))
+      }
+    }
+  }
+  if (result.length === 0) return ok('(0 filas)')
+  const cols = Object.keys(result[0])
+  const header = cols.join(' | ')
+  const sep = cols.map(() => '---').join('-+-')
+  const body = result.map((r) => cols.map((c) => r[c] ?? 'NULL').join(' | ')).join('\n')
+  return ok([header, sep, body].join('\n'))
+}
+
+function sqlInsert(rows: TableRow[], query: string): SimResult {
+  const m = query.match(/INSERT\s+INTO\s+(\w+)\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i)
+  if (!m) return err('ERROR: sintaxis INSERT incorrecta\nUso: INSERT INTO tabla (col1, col2) VALUES (val1, val2)')
+  const [, table, colsStr, valsStr] = m
+  const cols = colsStr.split(',').map((c) => c.trim())
+  const vals = valsStr.split(',').map((v) => v.trim().replace(/^['"]|['"]$/g, ''))
+  if (cols.length !== vals.length) return err('ERROR: número de columnas no coincide con valores')
+  const row: TableRow = {}
+  cols.forEach((c, i) => {
+    const n = Number(vals[i])
+    row[c] = isNaN(n) ? vals[i] : n
+  })
+  rows.push(row)
+  return ok(`INSERT 0 1`)
+}
+
+function sqlCreate(query: string): string | null {
+  const m = query.match(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)/i)
+  return m ? m[1].toLowerCase() : null
+}
+
+function postgres(ctx: SimContext, args: string[]): SimResult {
+  if (args.includes('--version') || args.includes('-V')) return ok('postgres (PostgreSQL) 16.3')
+  return ok('Uso: psql -d <base> [comandos SQL]\nConectá a Postgres con: psql -U polar -d mibase')
+}
+
+function psql(ctx: SimContext, args: string[]): SimResult {
+  // Captura query inline con -c
+  const cIdx = args.indexOf('-c')
+  if (cIdx === -1) {
+    return ok(`psql (16.3)\nConectado a: postgresql://polar@localhost:5432/mibase\nEscribe 'help' para ayuda.\n\nmibase=# `)
+  }
+  const query = args.slice(cIdx + 1).join(' ')
+  const rows = ctx.db.postgres
+  if (/^CREATE\s+TABLE/i.test(query)) {
+    const t = sqlCreate(query)
+    if (!t) return err('ERROR: CREATE TABLE mal formado')
+    if (!rows.has(t)) rows.set(t, [])
+    return ok('CREATE TABLE')
+  }
+  if (/^INSERT\s+INTO/i.test(query)) {
+    const m = query.match(/INSERT\s+INTO\s+(\w+)/i)
+    if (!m) return err('ERROR: INSERT mal formado')
+    const t = m[1].toLowerCase()
+    if (!rows.has(t)) return err(`ERROR: relación "${t}" no existe`)
+    return sqlInsert(rows.get(t)!, query)
+  }
+  if (/^SELECT/i.test(query)) {
+    const m = query.match(/FROM\s+(\w+)/i)
+    if (!m) return err('ERROR: SELECT mal formado')
+    const t = m[1].toLowerCase()
+    if (!rows.has(t)) return err(`ERROR: relación "${t}" no existe`)
+    return sqlSelect(rows.get(t)!, query)
+  }
+  if (/^DROP\s+TABLE/i.test(query)) {
+    const m = query.match(/DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?(\w+)/i)
+    if (!m) return err('ERROR: DROP mal formado')
+    rows.delete(m[1].toLowerCase())
+    return ok('DROP TABLE')
+  }
+  return ok(`psql: query no reconocida en simulador: ${query.slice(0, 40)}...`)
+}
+
+function mysql(ctx: SimContext, args: string[]): SimResult {
+  const eIdx = args.indexOf('-e')
+  if (eIdx === -1) {
+    return ok(`mysql  Ver 8.0.36 for Linux on x86_64\nConectado a: mysqldb@localhost:3306  (server 8.0.36)\nEscribe 'help;' para ayuda.\n\nmysql> `)
+  }
+  const query = args.slice(eIdx + 1).join(' ')
+  const rows = ctx.db.mysql
+  if (/^CREATE\s+TABLE/i.test(query)) {
+    const t = sqlCreate(query)
+    if (!t) return err('ERROR: CREATE TABLE mal formado')
+    if (!rows.has(t)) rows.set(t, [])
+    return ok('Query OK, 0 rows affected')
+  }
+  if (/^INSERT\s+INTO/i.test(query)) {
+    const m = query.match(/INSERT\s+INTO\s+(\w+)/i)
+    if (!m) return err('ERROR: INSERT mal formado')
+    const t = m[1].toLowerCase()
+    if (!rows.has(t)) return err(`ERROR: Table '${m[1]}' doesn't exist`)
+    return sqlInsert(rows.get(t)!, query)
+  }
+  if (/^SELECT/i.test(query)) {
+    const m = query.match(/FROM\s+(\w+)/i)
+    if (!m) return err('ERROR: SELECT mal formado')
+    const t = m[1].toLowerCase()
+    if (!rows.has(t)) return err(`ERROR: Table '${m[1]}' doesn't exist`)
+    return sqlSelect(rows.get(t)!, query)
+  }
+  if (/^DROP\s+TABLE/i.test(query)) {
+    const m = query.match(/DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?(\w+)/i)
+    if (!m) return err('ERROR: DROP mal formado')
+    rows.delete(m[1].toLowerCase())
+    return ok('Query OK, 0 rows affected')
+  }
+  return ok(`mysql: query no reconocida en simulador: ${query.slice(0, 40)}...`)
+}
+
+function sqlite3(ctx: SimContext, args: string[]): SimResult {
+  const query = args.slice(1).join(' ')
+  const rows = ctx.db.sqlite
+  if (!query) {
+    return ok(`SQLite version 3.45.0\nConnected to :memory:\nEscribe '.help' para ayuda.\n\nsqlite> `)
+  }
+  if (/^CREATE\s+TABLE/i.test(query)) {
+    const t = sqlCreate(query)
+    if (!t) return err('Error: near "TABLE": syntax error')
+    if (!rows.has(t)) rows.set(t, [])
+    return ok('')
+  }
+  if (/^INSERT\s+INTO/i.test(query)) {
+    const m = query.match(/INSERT\s+INTO\s+(\w+)/i)
+    if (!m) return err('Error: INSERT mal formado')
+    const t = m[1].toLowerCase()
+    if (!rows.has(t)) return err(`Error: no such table: ${m[1]}`)
+    return sqlInsert(rows.get(t)!, query)
+  }
+  if (/^SELECT/i.test(query)) {
+    const m = query.match(/FROM\s+(\w+)/i)
+    if (!m) return err('Error: SELECT mal formado')
+    const t = m[1].toLowerCase()
+    if (!rows.has(t)) return err(`Error: no such table: ${m[1]}`)
+    return sqlSelect(rows.get(t)!, query)
+  }
+  return ok(`sqlite3: query no reconocida en simulador: ${query.slice(0, 40)}...`)
+}
+
 function ok(stdout: string): SimResult {
   return { stdout, stderr: '', exitCode: 0, durationMs: 0 }
 }
@@ -917,7 +1352,7 @@ export function createSimulator() {
         grep: (a) => grep(ctx, a),
         find: (a) => findCmd(ctx, a),
         chmod: (a) => chmod(ctx, a),
-        ps: () => ps(ctx),
+        ps: (a) => ps(ctx, a ?? []),
         kill: (a) => kill(ctx, a),
         man: (a) => man(ctx, a),
         tail: (a) => tail(ctx, a),
@@ -942,6 +1377,22 @@ export function createSimulator() {
         wget: (a) => wget(ctx, a),
         git: (a) => git(ctx, a),
         nano: (a) => nano(ctx, a),
+        chown: (a) => chown(ctx, a),
+        ss: (a) => ss(ctx, a),
+        netstat: (a) => netstat(ctx, a),
+        ping: (a) => ping(ctx, a),
+        crontab: (a) => crontab(ctx, a),
+        useradd: (a) => useradd(ctx, a),
+        groupadd: (a) => groupadd(ctx, a),
+        groups: (a) => groups(ctx, a),
+        which: (a) => which(ctx, a),
+        env: (a) => envCmd(ctx, a),
+        history: (a) => historyCmd(ctx, a),
+        export: (a) => exportCmd(ctx, a),
+        postgres: (a) => postgres(ctx, a),
+        psql: (a) => psql(ctx, a),
+        mysql: (a) => mysql(ctx, a),
+        sqlite3: (a) => sqlite3(ctx, a),
         docker: (a) => docker(ctx, a),
         nginx: (a) => nginx(ctx, a),
         whoami: () => ok(ctx.env.USER),
@@ -949,7 +1400,7 @@ export function createSimulator() {
         clear: () => ok('\x1b[CLEAR\x1b'),
         help: () =>
           ok(
-            'Comandos: ls, cd, pwd, cat, mkdir, touch, rm, cp, mv, echo, grep, find, chmod, ps, kill, man, tail, head, wc, sort, uniq, tar, df, du, free, top, systemctl, journalctl, service, adduser, ufw, apt, ssh, scp, curl, wget, git, nano, docker, nginx, whoami, date, clear'
+            'Comandos: ls, cd, pwd, cat, mkdir, touch, rm, cp, mv, echo, grep, find, chmod, chown, ps, kill, man, tail, head, wc, sort, uniq, tar, df, du, free, top, systemctl, journalctl, service, adduser, useradd, groupadd, groups, ufw, apt, ssh, scp, curl, wget, ping, ss, netstat, crontab, which, env, export, history, git, nano, docker, nginx, postgres, psql, mysql, sqlite3, whoami, date, clear'
           ),
       }
       const handler = handlers[cmd]

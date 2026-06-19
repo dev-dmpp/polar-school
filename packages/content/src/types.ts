@@ -24,6 +24,11 @@ export interface Lesson {
     | 'ssh'
     | 'webserver'
     | 'seguridad'
+    | 'git'
+    | 'sql'
+    | 'web'
+    | 'automatizacion'
+    | 'sistema'
   readTime: number
   example?: string
   tip?: string
