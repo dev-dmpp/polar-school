@@ -5,7 +5,7 @@ export const linuxAvanzado: Course = {
     slug: 'linux-avanzado',
     title: 'Linux avanzado — procesos, red, permisos y tareas',
     description:
-      'Cuando algo se rompe en tu servidor, las herramientas son las mismas: procesos (ps, kill), puertos abiertos (ss), permisos (chmod/chown recursivo) y tareas programadas (cron). Aprendé a diagnosticar y arreglar.',
+      'Cuando algo se rompe en tu servidor, las herramientas son las mismas: procesos (ps, kill), puertos abiertos (ss), permisos (chmod/chown recursivo) y tareas programadas (cron). Aprende a diagnosticar y arreglar.',
     level: 'avanzado',
     totalLessons: 10,
     estimatedHours: 4,

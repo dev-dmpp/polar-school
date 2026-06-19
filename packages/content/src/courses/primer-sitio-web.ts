@@ -5,7 +5,7 @@ export const primerSitioWeb: Course = {
     slug: 'primer-sitio-web',
     title: 'Tu primer sitio web — HTML, CSS y deploy',
     description:
-      'Crear un sitio web hoy es más simple que nunca. En este curso armas uno desde cero con HTML, CSS y un poco de JavaScript. Después lo subes a internet gratis con GitHub Pages o Cloudflare Pages. Sin framework, sin servidor: archivos estáticos.',
+      'Crea un sitio web hoy es más simple que nunca. En este curso armas uno desde cero con HTML, CSS y un poco de JavaScript. Después lo subes a internet gratis con GitHub Pages o Cloudflare Pages. Sin framework, sin servidor: archivos estáticos.',
     level: 'basico',
     totalLessons: 10,
     estimatedHours: 4,
@@ -99,7 +99,7 @@ export const primerSitioWeb: Course = {
       category: 'deploy',
       readTime: 6,
       example:
-        '# 1. Crear repo en github.com/dev-dmpp/mi-sitio\n# 2. Subir el código\n$ git init\n$ git add .\n$ git commit -m "primer sitio"\n$ git remote add origin https://github.com/dev-dmpp/mi-sitio.git\n$ git push -u origin main\n\n# 3. En GitHub: Settings → Pages → Source: main\n# 4. Listo: tu sitio está en https://dev-dmpp.github.io/mi-sitio',
+        '# 1. Crea repo en github.com/dev-dmpp/mi-sitio\n# 2. Subir el código\n$ git init\n$ git add .\n$ git commit -m "primer sitio"\n$ git remote add origin https://github.com/dev-dmpp/mi-sitio.git\n$ git push -u origin main\n\n# 3. En GitHub: Settings → Pages → Source: main\n# 4. Listo: tu sitio está en https://dev-dmpp.github.io/mi-sitio',
       tip: "El repo DEBE ser público para GitHub Pages gratuito. Si quieres dominio propio, compras uno y en Settings → Pages lo conectas.",
     },
     {
@@ -112,20 +112,20 @@ export const primerSitioWeb: Course = {
       category: 'deploy',
       readTime: 5,
       example:
-        '# 1. Crear cuenta en pages.cloudflare.com\n# 2. Conectar tu repo de GitHub\n# 3. Configurar:\n#    - Build command: (vacío para sitios estáticos)\n#    - Build output: ./  (o /dist, /public)\n#    - Root: /\n# 4. Click "Deploy"\n#\n# Tu sitio queda en: https://mi-sitio.pages.dev',
+        '# 1. Crea cuenta en pages.cloudflare.com\n# 2. Conectar tu repo de GitHub\n# 3. Configura:\n#    - Build command: (vacío para sitios estáticos)\n#    - Build output: ./  (o /dist, /public)\n#    - Root: /\n# 4. Click "Deploy"\n#\n# Tu sitio queda en: https://mi-sitio.pages.dev',
       tip: "Cloudflare Pages tiene HTTPS automático y dominios custom gratis. Para sitios serios es mejor que GitHub Pages por velocidad.",
     },
     {
       slug: '09-dominio-custom',
       title: 'Conectar un dominio propio',
       description:
-        'En vez de dev-dmpp.github.io/mi-sitio quieres mi-sitio.com. Comprás el dominio (Namecheap, Cloudflare Registrar) y lo conectas al servicio de hosting.',
+        'En vez de dev-dmpp.github.io/mi-sitio quieres mi-sitio.com. Compras el dominio (Namecheap, Cloudflare Registrar) y lo conectas al servicio de hosting.',
       command: 'curl',
       difficulty: 'intermedio',
       category: 'deploy',
       readTime: 5,
       example:
-        '# En el registrador del dominio:\n# Tipo: CNAME\n# Nombre: www\n# Valor: dev-dmpp.github.io\n#\n# Tipo: A\n# Nombre: @\n# Valor: 185.199.108.153\n#\n# Esperás unos minutos y https://mi-sitio.com funciona.',
+        '# En el registrador del dominio:\n# Tipo: CNAME\n# Nombre: www\n# Valor: dev-dmpp.github.io\n#\n# Tipo: A\n# Nombre: @\n# Valor: 185.199.108.153\n#\n# Esperas unos minutos y https://mi-sitio.com funciona.',
       tip: "Cloudflare Registrar cobra al costo (sin markup). Namecheap y Porkbun son buenas alternativas. Evitá GoDaddy — sus precios de renovación son altos.",
     },
     {

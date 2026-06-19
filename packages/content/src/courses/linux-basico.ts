@@ -40,7 +40,7 @@ export const linuxBasico: Course = {
     },
     {
       slug: '04-mkdir',
-      title: 'mkdir — Crear directorios',
+      title: 'mkdir — Crea directorios',
       description: 'Crea carpetas nuevas.',
       command: 'mkdir',
       difficulty: 'basico',
@@ -49,7 +49,7 @@ export const linuxBasico: Course = {
     },
     {
       slug: '05-touch',
-      title: 'touch — Crear archivos vacíos',
+      title: 'touch — Crea archivos vacíos',
       description: 'Crea un archivo vacío o actualiza la fecha de uno existente.',
       command: 'touch',
       difficulty: 'basico',
@@ -76,7 +76,7 @@ export const linuxBasico: Course = {
     },
     {
       slug: '08-cp',
-      title: 'cp — Copiar archivos',
+      title: 'cp — Copia archivos',
       description: 'Copia un archivo o directorio a otra ubicación.',
       command: 'cp',
       difficulty: 'basico',
@@ -85,7 +85,7 @@ export const linuxBasico: Course = {
     },
     {
       slug: '09-mv',
-      title: 'mv — Mover y renombrar',
+      title: 'mv — Mueve y renombrar',
       description: 'Mueve archivos o cámbiales el nombre.',
       command: 'mv',
       difficulty: 'basico',
@@ -94,7 +94,7 @@ export const linuxBasico: Course = {
     },
     {
       slug: '10-rm',
-      title: 'rm — Borrar archivos',
+      title: 'rm — Borra archivos',
       description: 'El comando peligroso. Borra archivos y directorios. Con cuidado.',
       command: 'rm',
       difficulty: 'basico',
@@ -130,7 +130,7 @@ export const linuxBasico: Course = {
     },
     {
       slug: '14-grep',
-      title: 'grep — Buscar texto',
+      title: 'grep — Busca texto',
       description: 'Busca palabras dentro de archivos o salidas.',
       command: 'grep',
       difficulty: 'intermedio',
@@ -139,7 +139,7 @@ export const linuxBasico: Course = {
     },
     {
       slug: '15-find',
-      title: 'find — Buscar archivos',
+      title: 'find — Busca archivos',
       description: 'Encuentra archivos por nombre, tamaño, fecha o tipo.',
       command: 'find',
       difficulty: 'intermedio',
@@ -157,7 +157,7 @@ export const linuxBasico: Course = {
     },
     {
       slug: '17-sudo',
-      title: 'sudo — Ejecutar como administrador',
+      title: 'sudo — Ejecuta como administrador',
       description: 'Haz cosas que requieren permisos especiales.',
       command: 'sudo',
       difficulty: 'intermedio',

@@ -40,7 +40,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     queEs:
       'cd (change directory) te mueve entre carpetas. Sin argumentos te lleva a tu home. Con `..` subes un nivel. Con `-` vuelves a donde estabas antes.',
     cuando:
-      'TODO el tiempo. Navegar entre carpetas es la operación más común en la terminal.',
+      'TODO el tiempo. Navega entre carpetas es la operación más común en la terminal.',
     ejemplo: '$ cd proyectos\n$ pwd\n/home/polar/proyectos\n$ cd ..\n$ pwd\n/home/polar',
     tip:
       'Truco: escribe las primeras letras de una carpeta y pulsa TAB. La terminal autocompleta. Si hay ambigüedad, pulsa TAB dos veces para ver opciones.',
@@ -90,7 +90,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     queEs:
       'cp (copy) copia archivos o directorios. Con `-r` copia recursivamente (incluyendo subdirectorios). El original queda intacto.',
     cuando:
-      'Backups antes de editar algo importante. Duplicar archivos para experimentar. Copiar archivos entre carpetas.',
+      'Backups antes de editar algo importante. Duplicar archivos para experimentar. Copia archivos entre carpetas.',
     ejemplo: '$ cp README.md README.backup\n$ cp -r proyectos/ proyectos-backup/',
     tip:
       'cp NO pregunta si quieres sobreescribir un archivo existente. Para que pregunte, usa `cp -i`. Para forzar overwrite silencioso, `cp -f`.',
@@ -100,7 +100,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     queEs:
       'mv (move) mueve archivos a otra ubicación O los renombra. Si el destino es la misma carpeta, es un rename. Si es otra carpeta, es un move.',
     cuando:
-      'Renombrar archivos sin dejar el original. Mover archivos a otra carpeta.',
+      'Renombrar archivos sin dejar el original. Mueve archivos a otra carpeta.',
     ejemplo: '$ mv notas.txt apuntes.txt\n$ mv apuntes.txt proyectos/',
     tip:
       'mv también se usa para RENOMBRAR. A diferencia de cp, NO deja el original. Cuidado.',

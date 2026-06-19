@@ -30,47 +30,47 @@
 ## 3. Referencias analizadas (y qué copiamos de cada una)
 
 ### W3Schools (`w3schools.com`)
-- ✅ **Copiar**: Try-it inline en cada lección (editor + ejecución inmediata).
-- ✅ **Copiar**: Ejemplos copy-paste que funcionan al 100%.
+- ✅ **Copia**: Try-it inline en cada lección (editor + ejecución inmediata).
+- ✅ **Copia**: Ejemplos copy-paste que funcionan al 100%.
 - ❌ **No copiar**: UI anticuada, sin práctica real, paywalls para certificados.
 
 ### Cisco Networking Academy (`netacad.com`)
-- ✅ **Copiar**: Currículum serio con objetivos, ejercicios y quizzes al final de cada módulo.
-- ✅ **Copiar**: Certificación como aspiración (pero nuestra será gratis o donada).
+- ✅ **Copia**: Currículum serio con objetivos, ejercicios y quizzes al final de cada módulo.
+- ✅ **Copia**: Certificación como aspiración (pero nuestra será gratis o donada).
 - ❌ **No copiar**: Inglés-first, Packet Tracer de 2GB, modelo cerrado.
 
 ### Platzi (`platzi.com`)
-- ✅ **Copiar**: Cursos en español de calidad profesional, instructors reales.
-- ✅ **Copiar**: Cohortes con fechas y "live sessions".
+- ✅ **Copia**: Cursos en español de calidad profesional, instructors reales.
+- ✅ **Copia**: Cohortes con fechas y "live sessions".
 - ❌ **No copiar**: Suscripción mensual obligatoria, contenido gated.
 
 ### FreeCodeCamp (`freecodecamp.org`)
-- ✅ **Copiar**: 100% open source, español disponible, currículum gratis siempre.
-- ✅ **Copiar**: Certificaciones verificables.
+- ✅ **Copia**: 100% open source, español disponible, currículum gratis siempre.
+- ✅ **Copia**: Certificaciones verificables.
 - ❌ **No copiar**: No tiene contenido de infra (su fuerte es web).
 
 ### Docker Play with Docker (`labs.play-with-docker.com`)
-- ✅ **Copiar**: VMs ephemeral que se resetean (4h → nosotros 15min gratis, 4h pago).
-- ✅ **Copiar**: Acceso a terminal Linux real desde el navegador.
+- ✅ **Copia**: VMs ephemeral que se resetean (4h → nosotros 15min gratis, 4h pago).
+- ✅ **Copia**: Acceso a terminal Linux real desde el navegador.
 - ❌ **No copiar**: No tiene currículum ni progresión.
 
 ### TonyHost / 000webhost / InfinityFree
-- ✅ **Copiar**: Hosting PHP/MySQL gratis para que la gente publique cosas.
+- ✅ **Copia**: Hosting PHP/MySQL gratis para que la gente publique cosas.
 - ❌ **No copiar**: Caídas, soporte nulo, sin aprendizaje asociado.
 
 ### db4free.net / freesqldatabase.com
-- ✅ **Copiar**: DB MariaDB/MySQL gratis (5-25 MB) para practicar SQL.
-- ✅ **Copiar**: Schema precargado por lección (la DB ya tiene las tablas que el curso necesita).
+- ✅ **Copia**: DB MariaDB/MySQL gratis (5-25 MB) para practicar SQL.
+- ✅ **Copia**: Schema precargado por lección (la DB ya tiene las tablas que el curso necesita).
 - ❌ **No copiar**: MySQL viejo, sin documentación, sin sandbox de práctica guiada.
 
 ### Khan Academy (`khanacademy.org`)
-- ✅ **Copiar**: Progresión clara, gamificación sutil (streaks, badges).
-- ✅ **Copiar**: "Mastery" — no avanzás hasta demostrar que entendiste.
+- ✅ **Copia**: Progresión clara, gamificación sutil (streaks, badges).
+- ✅ **Copia**: "Mastery" — no avanzas hasta demostrar que entendiste.
 - ❌ **No copiar**: Leaderboards tóxicos, presión por velocidad.
 
 ### Vercel / Railway / Render / Netlify
-- ✅ **Copiar**: Deploy con git push, preview deployments.
-- ✅ **Copiar**: Free tier generoso para proyectos chicos.
+- ✅ **Copia**: Deploy con git push, preview deployments.
+- ✅ **Copia**: Free tier generoso para proyectos chicos.
 - ❌ **No copiar**: El mensaje "todo es automático, no aprendas infra". Nosotros enseñamos a deployar MANUAL primero, y después recomendamos estas herramientas como atajo válido.
 
 ---
@@ -223,7 +223,7 @@
 | **F6: Multi-idioma** | ongoing | EN, pt-BR |
 | **F7: Mobile app PWA** | 2 semanas | Instalar como app, offline-first |
 
-**Total realista a MVP funcional**: 4-6 meses con vos solo full-time.
+**Total realista a MVP funcional**: 4-6 meses con trabajo full-time solo.
 
 ---
 
@@ -279,8 +279,8 @@
 
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |---|---|---|---|
-| Nadie dona | Alta | Bajo (no perdés plata) | Validás con F0 antes de invertir |
-| Costos de VPS explotan | Media | Medio | Empezás con 1 VPS, escalás cuando hay tracción |
+| Nadie dona | Alta | Bajo (no pierdes plata) | Validas con F0 antes de invertir |
+| Costos de VPS explotan | Media | Medio | Empiezas con 1 VPS, escalás cuando hay tracción |
 | Burnout del founder | Alta | Alto | Pace realista, F0-F1 en 2 meses no en 2 semanas |
 | Alguien copia el currículum | Alta | Bajo | Es CC-BY-SA, está bien. Tu moat es la comunidad y el sandbox |
 | Lemon Squeezy cambia fees | Baja | Bajo | Migrar a TiloPay/PayPal es 1 día |
@@ -296,7 +296,7 @@
 |---|---|---|
 | 1 | ¿Nombre final del producto? | Provisional: "Polar School" |
 | 2 | ¿Dominio `.org` o `.com` o nada? | Provisional: ninguno (Cloudflare Pages URL) |
-| 3 | ¿Vos solo o buscás co-founders? | Provisional: solo,招募 después |
+| 3 | ¿Tú solo o buscas co-founders? | Provisional: solo,招募 después |
 | 4 | ¿Lemon Squeezy + PayPal como pasarelas iniciales? | Sí, decidido |
 | 5 | ¿Formalizar como S.A. cuándo? | Cuando haya tracción real ($200+/mes) |
 | 6 | ¿Currículum open source desde día 1? | Sí, CC-BY-SA |

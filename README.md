@@ -55,7 +55,7 @@ pnpm start
 Pendiente F0 → F1. El plan es:
 
 1. Build local → assets en `apps/web/dist/`
-2. Copiar al VPS vía SSH (rsync o GitHub Actions)
+2. Copia al VPS vía SSH (rsync o GitHub Actions)
 3. `pm2 restart polar-school-web`
 4. Cloudflare Tunnel expone `localhost:3000` al público
 
@@ -65,7 +65,7 @@ Pendiente F0 → F1. El plan es:
 
 ## Contribuir
 
-PRs bienvenidos. Las lecciones viven en `packages/content/src/courses/` como archivos TypeScript tipados. Para agregar una lección, editá el array `lessons` del curso correspondiente (el tipado en `types.ts` te guía). Para un curso nuevo, creá un archivo nuevo en la misma carpeta y registralo en `packages/content/src/index.ts`.
+PRs bienvenidos. Las lecciones viven en `packages/content/src/courses/` como archivos TypeScript tipados. Para agregar una lección, edita el array `lessons` del curso correspondiente (el tipado en `types.ts` te guía). Para un curso nuevo, crea un archivo nuevo en la misma carpeta y registralo en `packages/content/src/index.ts`.
 
 ## Créditos
 

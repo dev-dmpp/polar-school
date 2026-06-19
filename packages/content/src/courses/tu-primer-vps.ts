@@ -51,7 +51,7 @@ export const tuPrimerVps: Course = {
       slug: '04-adduser',
       title: 'adduser — crear un usuario no-root',
       description:
-        'Trabajar siempre como root es peligroso (un comando mal escrito puede borrar el sistema). Crea un usuario normal y usa sudo cuando necesites root.',
+        'Trabaja siempre como root es peligroso (un comando mal escrito puede borrar el sistema). Crea un usuario normal y usa sudo cuando necesites root.',
       command: 'adduser',
       difficulty: 'intermedio',
       category: 'permisos',
@@ -85,7 +85,7 @@ export const tuPrimerVps: Course = {
     },
     {
       slug: '07-nginx-config',
-      title: 'Configurar Nginx — server block para tu dominio',
+      title: 'Configura Nginx — server block para tu dominio',
       description:
         'Nginx necesita saber qué carpeta sirve y bajo qué dominio. Eso va en un archivo en /etc/nginx/sites-available/.',
       command: 'nano',

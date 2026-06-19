@@ -66,7 +66,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     tryit: ['nginx -t', 'systemctl reload nginx.service', 'systemctl status nginx.service'],
   },
   '08-ufw': {
-    queEs: 'ufw (Uncomplicated Firewall) es el firewall simple de Ubuntu. Por defecto bloquea TODO el tráfico entrante. Vos abres selectivamente los puertos que necesitas.',
+    queEs: 'ufw (Uncomplicated Firewall) es el firewall simple de Ubuntu. Por defecto bloquea TODO el tráfico entrante. Tú abres selectivamente los puertos que necesitas.',
     cuando: 'Inmediatamente después de instalar un VPS, antes de cualquier otra cosa. Después de instalar un nuevo servicio que escucha un puerto.',
     ejemplo: '$ sudo ufw allow OpenSSH\nRegla agregada\n\n$ sudo ufw allow "Nginx Full"\nRegla agregada\nRegla agregada (v6)\n\n$ sudo ufw enable\nEl firewall está activo y se inicia al arrancar el sistema\n\n$ sudo ufw status\nEstado: activo\n22/tcp                     ALLOW       Anywhere\n80/tcp                     ALLOW       Anywhere\n443/tcp                    ALLOW       Anywhere',
     tip: 'Si activas ufw sin permitir SSH, te quedas afuera del servidor. SIEMPRE allow OpenSSH primero. Para resetear desde un KVM/IPMI: sudo ufw disable.',

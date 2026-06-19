@@ -113,7 +113,7 @@ export const gitGithub: Course = {
       readTime: 5,
       example:
         '$ git remote add origin https://github.com/dev-dmpp/mi-proyecto.git\n$ git remote -v\norigin\thttps://github.com/dev-dmpp/mi-proyecto.git (fetch)\norigin\thttps://github.com/dev-dmpp/mi-proyecto.git (push)',
-      tip: 'origin es solo el nombre por defecto que se le da al remote principal. Podés tener varios (origin, upstream, backup) para apuntar a distintas copias.',
+      tip: 'origin es solo el nombre por defecto que se le da al remote principal. Puedes tener varios (origin, upstream, backup) para apuntar a distintas copias.',
     },
     {
       slug: '09-git-push',
@@ -138,7 +138,7 @@ export const gitGithub: Course = {
       category: 'git',
       readTime: 6,
       example:
-        '# 1. Crear rama y pushear\n$ git checkout -b feature-login\n$ git push -u origin feature-login\n\n# 2. Ir a GitHub, click "Compare & pull request"\n# 3. Llenar título y descripción\n# 4. Esperar review y mergear',
+        '# 1. Crea rama y pushear\n$ git checkout -b feature-login\n$ git push -u origin feature-login\n\n# 2. Ir a GitHub, click "Compare & pull request"\n# 3. Llenar título y descripción\n# 4. Espera review y mergear',
       tip: "En proyectos open source el flujo es: fork del repo, trabajar en tu fork, abrir PR contra el repo original. En equipos con acceso directo, trabajas directo en el repo principal.",
     },
   ],

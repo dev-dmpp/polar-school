@@ -38,7 +38,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
     tryit: ['systemctl list-units', 'systemctl enable nginx.service'],
   },
   '04-journalctl': {
-    queEs: 'journalctl te permite leer los logs del sistema almacenados por systemd. Podés filtrar por servicio (-u), por tiempo (--since), y seguir en vivo (-f).',
+    queEs: 'journalctl te permite leer los logs del sistema almacenados por systemd. Puedes filtrar por servicio (-u), por tiempo (--since), y seguir en vivo (-f).',
     cuando: 'Cuando algo falla en un servicio y quieres ver qué dijo en el log. Cuando necesitas auditar qué pasó en un momento específico. Cuando debuggeas un deploy que no funcionó.',
     ejemplo: '$ journalctl -u nginx.service --since "1 hour ago"\n-- Logs begin at Mon 2026-06-15 00:00:00 UTC --\nJun 19 12:01:12 polar nginx[1234]: 192.168.1.50 - - "GET / HTTP/1.1" 200 1234',
     tip: 'Filtros útiles: -u servicio (logs de un servicio), --since "fecha", -f (follow, como tail -f), -n N (últimas N líneas).',
@@ -67,7 +67,7 @@ const CONTENT: Record<string, { queEs: string; cuando: string; ejemplo: string; 
   },
   '08-tar': {
     queEs: 'tar agrupa varios archivos en uno solo (.tar). Combinado con gzip (.tar.gz) comprime. Es el formato estándar para backups y distribución de código fuente.',
-    cuando: 'Backups antes de un cambio grande. Distribuir código fuente (muchos proyectos se publican como .tar.gz). Mover carpetas entre servidores. Comprimir logs viejos.',
+    cuando: 'Backups antes de un cambio grande. Distribuir código fuente (muchos proyectos se publican como .tar.gz). Mueve carpetas entre servidores. Comprimir logs viejos.',
     ejemplo: '$ tar -czf backup.tar.gz proyectos/\n[simulado] backup.tar.gz creado (compresión con gzip)\n\n$ tar -xzf backup.tar.gz\nExtraídas 5 entradas',
     tip: 'Flags clave: -c crear, -x extraer, -t listar, -z gzip, -j bzip2, -f archivo. Casi siempre: -czf para crear, -xzf para extraer.',
     tryit: ['ls', 'tar -czf backup.tar.gz proyectos/', 'ls', 'tar -t -f backup.tar.gz'],

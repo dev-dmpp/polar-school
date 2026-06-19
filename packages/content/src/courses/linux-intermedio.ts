@@ -27,7 +27,7 @@ export const linuxIntermedio: Course = {
       slug: '02-systemctl-start-stop',
       title: 'systemctl start/stop/restart — controlar servicios',
       description:
-        'Iniciar, detener y reiniciar servicios manualmente. Útil cuando un servicio se cuelga o cambias su configuración.',
+        'Inicia, detener y reiniciar servicios manualmente. Útil cuando un servicio se cuelga o cambias su configuración.',
       command: 'systemctl',
       difficulty: 'intermedio',
       category: 'servicios',

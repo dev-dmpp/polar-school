@@ -995,7 +995,7 @@ function git(ctx: SimContext, args: string[]): SimResult {
 
 function nano(_ctx: SimContext, args: string[]): SimResult {
   const file = args[0] ?? 'nuevo-archivo'
-  return ok(`GNU nano 6.2 — ${file}\n\n  [ 0 líneas leídas ]\n^G Ayuda  ^O Guardar  ^W Buscar  ^K Cortar  ^J Justificar\n^X Salir   ^R Leer     ^U Pegar\n\n[editor simulado — nano real abriría interactivamente]`)
+  return ok(`GNU nano 6.2 — ${file}\n\n  [ 0 líneas leídas ]\n^G Ayuda  ^O Guarda  ^W Busca  ^K Cortar  ^J Justificar\n^X Sal   ^R Leer     ^U Pega\n\n[editor simulado — nano real abriría interactivamente]`)
 }
 
 function docker(_ctx: SimContext, args: string[]): SimResult {
