@@ -65,13 +65,6 @@
   let destroyed = false
   let resizeObserver: ResizeObserver | null = null
 
-  function deriveApiBase(): string {
-    if (apiBase) return apiBase.replace(/\/$/, '')
-    if (typeof window === 'undefined') return ''
-    // Mismo origen: window.location.origin (ej: http://127.0.0.1:3000)
-    return window.location.origin
-  }
-
   /**
    * Resuelve la URL del API. Prioridad:
    *   1. prop `apiBase` (explícita)
@@ -100,17 +93,31 @@
     reused: boolean
   }> {
     const base = resolveApiBase()
-    const res = await fetch(`${base}/sandbox/start`, {
-      method: 'POST',
-      credentials: 'include',
-    })
-    if (res.status === 401) throw new Error('NO_SESSION')
+    const url = `${base}/sandbox/start`
+    let res: Response
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } catch (err) {
+      // Network-level failure (DNS, CORS preflight, mixed-content, refused)
+      console.error('[sandbox] POST', url, 'network error:', err)
+      throw new Error(`NETWORK: ${(err as Error).message ?? 'fallo de red'}`)
+    }
+
+    if (res.status === 401) {
+      console.info('[sandbox] sin sesión activa (401) — esperando login')
+      throw new Error('NO_SESSION')
+    }
     if (res.status === 429) {
       const body = await res.json().catch(() => ({}))
+      console.warn('[sandbox] 429 too many:', body)
       throw new Error(`TOO_MANY: ${body.error ?? 'límite alcanzado'}`)
     }
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
+      console.error('[sandbox] POST', url, 'status', res.status, 'body', body)
       throw new Error(`START_FAILED: ${body.error ?? res.statusText}`)
     }
     return res.json()
@@ -120,6 +127,7 @@
     return new Promise((resolve, reject) => {
       const httpBase = resolveApiBase()
       const url = `${apiToWsUrl(httpBase, wsPath)}?token=${encodeURIComponent(sessionToken)}`
+      console.info('[sandbox] WS connecting:', url)
       const sock = new WebSocket(url)
       sock.binaryType = 'arraybuffer'
       ws = sock
@@ -139,6 +147,7 @@
                 resolved = true
                 status = 'ready'
                 statusMessage = 'Listo'
+                console.info('[sandbox] WS ready')
                 resolve()
                 onReady?.()
               }
@@ -147,11 +156,13 @@
             if (msg.type === 'error') {
               status = 'error'
               statusMessage = msg.message ?? 'Error desconocido'
+              console.error('[sandbox] WS server error:', msg)
               return
             }
             if (msg.type === 'exit') {
               status = 'reconnecting'
               statusMessage = `Conexión cerrada (${msg.reason ?? msg.code}). Reconectando…`
+              console.warn('[sandbox] WS exit:', msg)
               return
             }
           } catch {
@@ -165,6 +176,7 @@
       }
 
       sock.onerror = () => {
+        console.error('[sandbox] WS error:', url)
         if (!resolved) {
           resolved = true
           reject(new Error('WS_ERROR'))
@@ -172,6 +184,7 @@
       }
 
       sock.onclose = (ev) => {
+        console.info('[sandbox] WS close:', ev.code, ev.reason || '(sin razón)')
         if (!resolved) {
           resolved = true
           reject(new Error(`WS_CLOSED:${ev.code}`))
@@ -289,8 +302,19 @@
 
       if (msg === 'NO_SESSION') {
         status = 'fallback'
-        statusMessage = 'Necesitás iniciar sesión para usar el sandbox real'
-        term?.writeln('\x1b[33m⚠ No hay sesión activa. Iniciá sesión arriba a la derecha.\x1b[0m')
+        statusMessage = 'Inicia sesión arriba para usar el sandbox real'
+        term?.writeln('\x1b[33m⚠ No hay sesión activa. Inicia sesión arriba a la derecha para usar el sandbox real.\x1b[0m')
+        term?.writeln('\x1b[90m  Esta terminal esperará automáticamente cuando inicies sesión.\x1b[0m')
+        startLoginWatcher()
+        onFallback?.()
+        return
+      }
+
+      if (msg.startsWith('NETWORK')) {
+        status = 'error'
+        statusMessage = 'Backend no disponible'
+        term?.writeln(`\x1b[31m✗ No pude contactar el backend (${msg}).\x1b[0m`)
+        term?.writeln('\x1b[90m  Verifica que el API esté corriendo y que el host del túnel sea correcto.\x1b[0m')
         onFallback?.()
         return
       }
@@ -298,9 +322,62 @@
       status = 'error'
       statusMessage = `Error: ${msg}`
       term?.writeln(`\x1b[31m✗ No pude conectar al sandbox: ${msg}\x1b[0m`)
-      term?.writeln('\x1b[90m  Verificá que el backend esté corriendo y tengas sesión.\x1b[0m')
+      term?.writeln('\x1b[90m  Verifica que el backend esté corriendo y que tengas sesión activa.\x1b[0m')
       onFallback?.()
     }
+  }
+
+  /**
+   * Watcher liviano: detecta cuando el usuario inicia sesión (aparece cookie de sesión)
+   * y reintenta el bootstrap automáticamente. Corre a 1Hz y se autodestruye al primer
+   * éxito (o cuando el componente se desmonta).
+   *
+   * Detección: el backend expone GET /auth/me que devuelve 200 + {user: {...}} si hay
+   * sesión, 200 + {user: null} si no. Más confiable que inspeccionar document.cookie
+   * (que no ve cookies HttpOnly).
+   */
+  let loginWatcher: ReturnType<typeof setInterval> | null = null
+  function startLoginWatcher() {
+    if (loginWatcher || destroyed) return
+    console.info('[sandbox] iniciando watcher de login (1Hz)')
+    loginWatcher = setInterval(async () => {
+      if (destroyed) {
+        if (loginWatcher) clearInterval(loginWatcher)
+        loginWatcher = null
+        return
+      }
+      const base = resolveApiBase()
+      try {
+        const r = await fetch(`${base}/auth/me`, {
+          method: 'GET',
+          credentials: 'include',
+        })
+        if (r.ok) {
+          // /auth/me devuelve 200 + {user: null} si no hay sesión,
+          // o 200 + {user: {...}} si hay sesión. Sólo nos importa el segundo caso.
+          const body = await r.json().catch(() => ({}))
+          if (body && body.user) {
+            console.info('[sandbox] sesión detectada — reintentando bootstrap')
+            if (loginWatcher) {
+              clearInterval(loginWatcher)
+              loginWatcher = null
+            }
+            // Resetear estado y reintentar
+            status = 'connecting'
+            statusMessage = 'Conectando al sandbox…'
+            // Limpiar contenido anterior del terminal
+            try {
+              term?.clear()
+            } catch {
+              /* ignore */
+            }
+            await bootstrap()
+          }
+        }
+      } catch {
+        // Silencioso: seguimos esperando
+      }
+    }, 1000)
   }
 
   onMount(() => {
@@ -310,6 +387,7 @@
   onDestroy(() => {
     destroyed = true
     if (reconnectTimer) clearTimeout(reconnectTimer)
+    if (loginWatcher) clearInterval(loginWatcher)
     if (resizeObserver) resizeObserver.disconnect()
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.close(1000, 'component-unmounted')
