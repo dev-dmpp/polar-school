@@ -79,7 +79,7 @@ export async function createContainer(userId: string): Promise<ContainerInfo> {
   if (userActive.length >= MAX_PER_USER) {
     throw new SandboxError(
       "TOO_MANY_PER_USER",
-      `Ya tenés ${MAX_PER_USER} contenedores activos. Cerrá alguno antes de abrir otro.`,
+      `Ya tienes ${MAX_PER_USER} contenedores activos. Cierra alguno antes de abrir otro.`,
     );
   }
 
