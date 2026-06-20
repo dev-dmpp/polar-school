@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro'
 import { linuxBasico } from '@polar-school/content'
-import { TryIt, MarkComplete } from '@polar-school/ui'
+import { TryIt, MarkComplete, SandboxTerminal } from '@polar-school/ui'
 
 export function getStaticPaths() {
   return linuxBasico.lessons.map((lesson) => ({
@@ -250,6 +250,17 @@ const content = CONTENT[lesson.slug]
       <TryIt client:load initialCommands={content.tryit} />
     </section>
 
+    {['01-pwd', '03-cd'].includes(lesson.slug) && (
+      <section class="block sandbox-block">
+        <h2>🐳 Sandbox real (opcional)</h2>
+        <p>
+          Si tenés sesión iniciada, podés practicar los mismos comandos en un contenedor
+          Linux real. Cada sesión es tuya, privada, y se destruye al terminar.
+        </p>
+        <SandboxTerminal client:only="svelte" height="380px" />
+      </section>
+    )}
+
     {content.tip && (
       <section class="block tip-block">
         <h2>💡 Tip</h2>
@@ -303,6 +314,18 @@ const content = CONTENT[lesson.slug]
     border: 2px solid var(--wood);
     border-radius: 12px;
     padding: 1.5rem;
+  }
+  .sandbox-block {
+    background: linear-gradient(135deg, #0b1020 0%, #111827 100%);
+    color: #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+  .sandbox-block h2 {
+    color: #22d3ee !important;
+  }
+  .sandbox-block p {
+    color: #cbd5e1;
   }
   .tip-block {
     background: #fef3d7;

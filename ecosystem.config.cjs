@@ -10,7 +10,7 @@ module.exports = {
       name: "polar-school-api",
       cwd: "./apps/api",
       script: "node",
-      args: "dist/index.js",
+      args: "--import tsx/esm src/index.ts",
       instances: 1,
       exec_mode: "fork",
       max_memory_restart: "300M",

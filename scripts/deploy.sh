@@ -63,8 +63,8 @@ pnpm build
 
 # 6. Restart con pm2 (zero-downtime reload)
 echo "▸ Restart pm2"
-if pm2 list 2>/dev/null | grep -q "polar-school-$ENV"; then
-  pm2 reload "polar-school-$ENV" || pm2 restart "polar-school-$ENV"
+if pm2 list 2>/dev/null | grep -q "polar-school-api"; then
+  pm2 reload "polar-school-api" || pm2 restart "polar-school-api"
 else
   pm2 start ecosystem.config.cjs --env "$ENV"
 fi
