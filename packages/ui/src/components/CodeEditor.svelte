@@ -33,6 +33,12 @@
   import css from 'highlight.js/lib/languages/css'
   import 'highlight.js/styles/github-dark.css'
   import type { EditorHistory } from '../lib/editor-history'
+  import {
+    detectFolds,
+    projectFoldedLines,
+    projectFoldedNumbers,
+    type FoldRange,
+  } from '../lib/code-fold'
 
   hljs.registerLanguage('javascript', javascript)
   hljs.registerLanguage('xml', xml)
@@ -70,6 +76,26 @@
   let currentLine = $state(1)
   let selectionStart = $state(0)
 
+  // B9: folds disponibles (rangos detectados del value actual).
+  let availableFolds = $derived<Map<number, FoldRange>>(detectFolds(value, language))
+
+  // B9: folds que el usuario decidio colapsar (set de startLines).
+  let collapsedFolds = $state<Set<number>>(new Set())
+
+  // B9: invalida folds cuando el value cambia de forma significativa
+  // (reset cuando arranca un value nuevo). Estrategia simple: si el
+  // availableFolds no contiene un startLine que estaba collapsed, lo saco.
+  $effect(() => {
+    const validKeys = new Set(availableFolds.keys())
+    const next = new Set<number>()
+    for (const k of collapsedFolds) {
+      if (validKeys.has(k)) next.add(k)
+    }
+    if (next.size !== collapsedFolds.size) {
+      collapsedFolds = next
+    }
+  })
+
   // Estado de highlight
   let highlighted = $state('')
   let highlightTimer: ReturnType<typeof setTimeout> | null = null
@@ -80,13 +106,10 @@
   let preEl: HTMLPreElement | null = $state(null)
   let numbersEl: HTMLPreElement | null = $state(null)
 
-  // B7: precomputamos el texto de numeros como un solo string.
-  // "1\n2\n3\n...\nN\n" — agregar newline final para que la ultima
-  // linea tenga la misma altura que el textarea (que tambien tiene newline
-  // explicito al final del highlighted).
-  let numbersText = $derived(
-    Array.from({ length: lineCount }, (_, i) => i + 1).join('\n') + '\n'
-  )
+  // B7+B9: precomputamos el texto de numeros como un solo string,
+  // usando el proyector de folds para que las lineas colapsadas
+  // muestren "…" y se salteen los numeros del medio.
+  let numbersText = $derived(projectFoldedNumbers(value, collapsedFolds, availableFolds))
 
   // B7: numero a resaltar (currentLine)
   function recomputeCurrentLine() {
@@ -132,6 +155,90 @@
     }
   }
 
+  // B9: toggle fold en una linea de inicio. Si esta colapsado, expande.
+  // Si no, colapsa. Si la linea no es inicio de fold, no hace nada.
+  function toggleFold(startLine: number) {
+    if (!availableFolds.has(startLine)) return
+    const next = new Set(collapsedFolds)
+    if (next.has(startLine)) {
+      next.delete(startLine)
+    } else {
+      next.add(startLine)
+    }
+    collapsedFolds = next
+    // Recalcular current line por si quedo dentro de un fold
+    queueMicrotask(recomputeCurrentLine)
+  }
+
+  // B9: click en chevron del gutter. Calcula que startLine fue clickeado.
+  // Estrategia: el chevron esta en una "linea virtual" del gutter que
+  // coincide con la linea de inicio de un fold. Recorremos las lineas
+  // del gutter proyectado y vemos si la linea clickeada es inicio de fold.
+  function handleChevronClick(ev: MouseEvent) {
+    if (!numbersEl || !textareaEl) return
+    ev.stopPropagation() // no propagar al click del gutter
+    const rect = numbersEl.getBoundingClientRect()
+    const yWithinPre = ev.clientY - rect.top + numbersEl.scrollTop
+    const padTop = parseFloat(getComputedStyle(numbersEl).paddingTop) || 0
+    const lineHeight = parseFloat(getComputedStyle(numbersEl).lineHeight) || 18
+    const visualLine = Math.floor((yWithinPre - padTop) / lineHeight) + 1
+
+    // Mapear visualLine (linea en el texto proyectado) -> linea real
+    // Recorremos las lineas reales y contamos cuantas "salen" en el render.
+    const lines = value.split('\n')
+    const skipLines = new Set<number>()
+    for (const startLine of collapsedFolds) {
+      const range = availableFolds.get(startLine)
+      if (!range) continue
+      for (let l = range.startLine + 1; l <= range.endLine; l++) {
+        skipLines.add(l)
+      }
+    }
+
+    let visual = 0
+    for (let i = 0; i < lines.length; i++) {
+      const realLine = i + 1
+      if (skipLines.has(realLine)) continue
+      visual++
+      if (visual === visualLine) {
+        if (availableFolds.has(realLine)) {
+          toggleFold(realLine)
+        }
+        return
+      }
+    }
+  }
+
+  // B9: lista derivada de (visualLineIndex, startLine, collapsed) para
+  // renderizar los chevrons en el gutter. La visualLineIndex es 1-based
+  // contando lineas renderizadas (no saltadas).
+  let chevronRows = $derived(() => {
+    const lines = value.split('\n')
+    const skipLines = new Set<number>()
+    for (const startLine of collapsedFolds) {
+      const range = availableFolds.get(startLine)
+      if (!range) continue
+      for (let l = range.startLine + 1; l <= range.endLine; l++) {
+        skipLines.add(l)
+      }
+    }
+    const rows: Array<{ visual: number; startLine: number; collapsed: boolean }> = []
+    let visual = 0
+    for (let i = 0; i < lines.length; i++) {
+      const realLine = i + 1
+      if (skipLines.has(realLine)) continue
+      visual++
+      if (availableFolds.has(realLine)) {
+        rows.push({
+          visual,
+          startLine: realLine,
+          collapsed: collapsedFolds.has(realLine),
+        })
+      }
+    }
+    return rows
+  })
+
   // B6: estado undo/redo
   let canUndoState = $state(false)
   let canRedoState = $state(false)
@@ -149,10 +256,14 @@
 
   function recomputeHighlight() {
     try {
-      const result = hljs.highlight(value, { language, ignoreIllegals: true })
+      // B9: highlight sobre el texto proyectado (con "…" donde hay folds)
+      // para que el overlay quede alineado con el gutter.
+      const projected = projectFoldedLines(value, collapsedFolds, availableFolds)
+      const result = hljs.highlight(projected, { language, ignoreIllegals: true })
       highlighted = result.value + '\n'
     } catch {
-      highlighted = escapeHtml(value) + '\n'
+      const projected = projectFoldedLines(value, collapsedFolds, availableFolds)
+      highlighted = escapeHtml(projected) + '\n'
     }
   }
 
@@ -328,6 +439,20 @@
       onclick={handleGutterClick}
       role="presentation"
     >{numbersText}</pre>
+    <!-- B9: capa de chevrons superpuesta al gutter -->
+    <div class="chevrons">
+      {#each chevronRows() as row (row.startLine)}
+        <button
+          type="button"
+          class="chevron"
+          class:collapsed={row.collapsed}
+          style="top: calc(var(--gutter-pad-top, 0.6rem) + (var(--gutter-line-h, 1.5rem) * {row.visual - 1}));"
+          title={row.collapsed ? 'Expandir' : 'Plegar'}
+          aria-label={row.collapsed ? 'Expandir bloque' : 'Plegar bloque'}
+          onclick={handleChevronClick}
+        >{row.collapsed ? '▸' : '▾'}</button>
+      {/each}
+    </div>
   </div>
 
   <!-- Editor: textarea + highlight overlay absolutos -->
@@ -366,6 +491,7 @@
 
   /* B7: gutter de numeros. B8: clickable (solo el pre hijo recibe clicks). */
   .gutter {
+    position: relative; /* B9: para contener chevrons absolutos */
     flex: 0 0 auto;
     width: 2.5rem;
     background: var(--pg-bg, #1e1e1e);
@@ -373,6 +499,9 @@
     overflow: hidden;
     user-select: none;
     pointer-events: none;
+    /* B9: variables para posicionar chevrons */
+    --gutter-pad-top: 0.6rem;
+    --gutter-line-h: 1.275rem; /* 0.85rem * 1.5 */
   }
 
   .line-numbers {
@@ -513,5 +642,39 @@
   }
   :global(.hljs-tag) {
     color: #85e89d;
+  }
+
+  /* B9: capa de chevrons sobre el gutter */
+  .chevrons {
+    position: absolute;
+    inset: 0;
+    pointer-events: none; /* los botones individuales re-habilitan */
+  }
+  .chevron {
+    position: absolute;
+    left: 0;
+    width: 1rem;
+    height: var(--gutter-line-h, 1.275rem);
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: 0;
+    color: #8b949e;
+    cursor: pointer;
+    pointer-events: auto;
+    font-size: 0.7rem;
+    transition: color 0.1s, background 0.1s;
+    border-radius: 2px;
+  }
+  .chevron:hover {
+    color: var(--pg-fg, #e4e4e7);
+    background: rgba(217, 119, 6, 0.18);
+  }
+  .chevron.collapsed {
+    color: var(--pg-accent, #d97706);
   }
 </style>
