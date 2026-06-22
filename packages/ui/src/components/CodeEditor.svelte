@@ -327,8 +327,7 @@
   /* B7: gutter de numeros */
   .gutter {
     flex: 0 0 auto;
-    width: 3ch;
-    padding: 0.6rem 0.4rem 0.6rem 0.6rem;
+    width: 2.5rem;
     background: var(--pg-bg, #1e1e1e);
     border-right: 1px solid var(--pg-border, #3f3f46);
     overflow: hidden;
@@ -343,6 +342,7 @@
     line-height: 1.5;
     margin: 0;
     border: 0;
+    box-sizing: border-box;
     white-space: pre;
     word-wrap: normal;
     overflow: hidden;
@@ -350,6 +350,11 @@
     color: #6a737d;
     text-align: right;
     background: transparent;
+
+    /* Mismo padding-top que el editor + padding-right para el ultimo digito */
+    padding: 0.6rem 0.4rem 0.6rem 0;
+    width: 100%;
+    height: 100%;
   }
 
   /* B7: highlight de current line via gradiente — trick para no renderizar
