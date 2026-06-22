@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro'
 import { linuxBasico } from '@polar-school/content'
-import { TryIt, MarkComplete, SandboxTerminal } from '@polar-school/ui'
+import { LessonRenderer, MarkComplete } from '@polar-school/ui'
 
 export function getStaticPaths() {
   return linuxBasico.lessons.map((lesson) => ({
@@ -246,20 +246,17 @@ const content = CONTENT[lesson.slug]
 
     <section class="block tryit-block">
       <h2>Pruébalo</h2>
-      <p>Ejecuta los comandos en esta terminal simulada. Escribe los tuyos también.</p>
-      <TryIt client:load initialCommands={content.tryit} />
+      <p>
+        Ejecuta los comandos en el sandbox real (Linux Alpine). Es sandbox anónimo,
+        se destruye solo tras unos minutos de inactividad.
+      </p>
+      <LessonRenderer
+        client:load
+        kind={lesson.kind}
+        title={lesson.title}
+        height="380px"
+      />
     </section>
-
-    {['01-pwd', '03-cd'].includes(lesson.slug) && (
-      <section class="block sandbox-block">
-        <h2>🐳 Sandbox real (opcional)</h2>
-        <p>
-          Si tienes sesión iniciada, puedes practicar los mismos comandos en un contenedor
-          Linux real. Cada sesión es tuya, privada, y se destruye al terminar.
-        </p>
-        <SandboxTerminal client:only="svelte" height="380px" />
-      </section>
-    )}
 
     {content.tip && (
       <section class="block tip-block">
