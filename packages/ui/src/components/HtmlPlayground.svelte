@@ -555,25 +555,35 @@ boton?.addEventListener('click', () => {
   {#if gotoOpen}
     <div class="goto-overlay" role="dialog" aria-label="Ir a linea">
       <div class="goto-box">
-        <label for="goto-input">Ir a linea:</label>
-        <input
-          id="goto-input"
-          bind:this={gotoInputEl}
-          bind:value={gotoValue}
-          type="text"
-          inputmode="numeric"
-          pattern="[0-9]*"
-          placeholder="N"
-          onkeydown={(ev) => {
-            if (ev.key === 'Enter') {
-              ev.preventDefault()
-              commitGoto()
-            } else if (ev.key === 'Escape') {
-              ev.preventDefault()
-              closeGoto()
-            }
+        <form
+          class="goto-form"
+          onsubmit={(ev) => {
+            ev.preventDefault()
+            commitGoto()
           }}
-        />
+        >
+          <label for="goto-input">Ir a linea:</label>
+          <input
+            id="goto-input"
+            bind:this={gotoInputEl}
+            bind:value={gotoValue}
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            placeholder="N"
+            enterkeyhint="go"
+            onkeydown={(ev) => {
+              if (ev.key === 'Enter') {
+                ev.preventDefault()
+                commitGoto()
+              } else if (ev.key === 'Escape') {
+                ev.preventDefault()
+                closeGoto()
+              }
+            }}
+          />
+          <button type="submit" class="goto-btn" aria-label="Ir a linea">Ir</button>
+        </form>
         <span class="goto-hint">Enter ↵ saltar · Esc cerrar</span>
       </div>
     </div>
@@ -688,13 +698,20 @@ boton?.addEventListener('click', () => {
   }
   .goto-box {
     display: flex;
-    align-items: center;
-    gap: 0.6rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
     background: #27272a;
     border: 1px solid var(--pg-accent);
     border-radius: 8px;
-    padding: 0.5rem 0.8rem;
+    padding: 0.6rem 0.8rem;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    min-width: 220px;
+  }
+  .goto-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
   .goto-box label {
     font-size: 0.85rem;
@@ -714,6 +731,20 @@ boton?.addEventListener('click', () => {
   }
   .goto-box input:focus {
     border-color: var(--pg-accent);
+  }
+  .goto-btn {
+    background: var(--pg-accent);
+    border: 1px solid var(--pg-accent);
+    color: white;
+    font-size: 0.85rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+  }
+  .goto-btn:hover {
+    background: #b45309;
+    border-color: #b45309;
   }
   .goto-hint {
     font-size: 0.7rem;
