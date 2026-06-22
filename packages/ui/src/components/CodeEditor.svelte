@@ -50,6 +50,8 @@
     onFocus?: () => void
     /** Callback cuando cambia canUndo/canRedo (B6). */
     onHistoryChange?: (canUndo: boolean, canRedo: boolean) => void
+    /** Callback B8: cuando cambia el cursor (linea/columna). */
+    onCursorChange?: (line: number, col: number) => void
   }
 
   let {
@@ -60,6 +62,7 @@
     history = null,
     onFocus,
     onHistoryChange,
+    onCursorChange,
   }: Props = $props()
 
   // B7: derived state
@@ -91,7 +94,42 @@
     const pos = textareaEl.selectionStart ?? 0
     selectionStart = pos
     const before = value.substring(0, pos)
-    currentLine = before.split('\n').length
+    const line = before.split('\n').length
+    const lastNl = before.lastIndexOf('\n')
+    const col = lastNl === -1 ? pos + 1 : pos - lastNl
+    currentLine = line
+    onCursorChange?.(line, col)
+  }
+
+  // B8: salta a una linea (1-based). Posiciona el cursor al inicio
+  // de esa linea. Si el numero es invalido, no hace nada.
+  export function gotoLine(targetLine: number) {
+    if (!textareaEl) return
+    const lines = value.split('\n')
+    const n = Math.max(1, Math.min(targetLine, lines.length))
+    // offset = suma de lengths de lineas previas + n-1 newlines
+    let offset = 0
+    for (let i = 0; i < n - 1; i++) {
+      offset += lines[i].length + 1 // +1 por el \n
+    }
+    textareaEl.focus()
+    textareaEl.setSelectionRange(offset, offset)
+    recomputeCurrentLine()
+  }
+
+  // B8: click en el gutter (numero) — calcula que linea fue clickeada
+  // segun el offsetY del click relativo al <pre> de numeros.
+  function handleGutterClick(ev: MouseEvent) {
+    if (!numbersEl || !textareaEl) return
+    const rect = numbersEl.getBoundingClientRect()
+    const yWithinPre = ev.clientY - rect.top + numbersEl.scrollTop
+    // 0.6rem de padding-top (mismo que el editor)
+    const padTop = parseFloat(getComputedStyle(numbersEl).paddingTop) || 0
+    const lineHeight = parseFloat(getComputedStyle(numbersEl).lineHeight) || 18
+    const line = Math.floor((yWithinPre - padTop) / lineHeight) + 1
+    if (line >= 1 && line <= lineCount) {
+      gotoLine(line)
+    }
   }
 
   // B6: estado undo/redo
@@ -280,13 +318,15 @@
 </script>
 
 <div class="code-editor" data-panel={panel}>
-  <!-- B7: Line numbers gutter (a la izquierda) -->
+  <!-- B7: Line numbers gutter (a la izquierda). B8: clickable. -->
   <div class="gutter" aria-hidden="true">
     <pre
       bind:this={numbersEl}
       class="line-numbers"
       class:has-current={currentLine >= 1}
       style="--current-line: {currentLine};"
+      onclick={handleGutterClick}
+      role="presentation"
     >{numbersText}</pre>
   </div>
 
@@ -324,7 +364,7 @@
     background: var(--pg-bg, #1e1e1e);
   }
 
-  /* B7: gutter de numeros */
+  /* B7: gutter de numeros. B8: clickable (solo el pre hijo recibe clicks). */
   .gutter {
     flex: 0 0 auto;
     width: 2.5rem;
@@ -355,6 +395,15 @@
     padding: 0.6rem 0.4rem 0.6rem 0;
     width: 100%;
     height: 100%;
+
+    /* B8: clickable */
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  /* B8: highlight sutil al hacer hover */
+  .line-numbers:hover {
+    color: #c9d1d9;
   }
 
   /* B7: highlight de current line via gradiente — trick para no renderizar

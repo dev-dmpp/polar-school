@@ -126,9 +126,9 @@ boton?.addEventListener('click', () => {
   let savedLabelTimer: ReturnType<typeof setInterval> | null = null
 
   // Editor refs (B6) para llamar undo/redo desde los botones del header
-  let htmlEditor: { undo: () => void; redo: () => void } | null = $state(null)
-  let cssEditor: { undo: () => void; redo: () => void } | null = $state(null)
-  let jsEditor: { undo: () => void; redo: () => void } | null = $state(null)
+  let htmlEditor: { undo: () => void; redo: () => void; gotoLine: (n: number) => void } | null = $state(null)
+  let cssEditor: { undo: () => void; redo: () => void; gotoLine: (n: number) => void } | null = $state(null)
+  let jsEditor: { undo: () => void; redo: () => void; gotoLine: (n: number) => void } | null = $state(null)
 
   // History stacks (B6): uno por panel
   const htmlHistory = new EditorHistory(50)
@@ -154,6 +154,60 @@ boton?.addEventListener('click', () => {
   function handleJsHistoryChange(canUndo: boolean, canRedo: boolean) {
     jsCanUndo = canUndo
     jsCanRedo = canRedo
+  }
+
+  // B8: estado de navegacion a linea
+  let activePanel = $state<'html' | 'css' | 'js' | null>(null)
+  let cursorByPanel = $state({
+    html: { line: 1, col: 1 },
+    css: { line: 1, col: 1 },
+    js: { line: 1, col: 1 },
+  })
+
+  function handleHtmlCursor(line: number, col: number) {
+    cursorByPanel.html = { line, col }
+    activePanel = 'html'
+  }
+  function handleCssCursor(line: number, col: number) {
+    cursorByPanel.css = { line, col }
+    activePanel = 'css'
+  }
+  function handleJsCursor(line: number, col: number) {
+    cursorByPanel.js = { line, col }
+    activePanel = 'js'
+  }
+
+  // B8: paleta "Ir a linea" (Ctrl/Cmd+G)
+  let gotoOpen = $state(false)
+  let gotoValue = $state('')
+  let gotoInputEl: HTMLInputElement | null = $state(null)
+  let lastGotoPanel: 'html' | 'css' | 'js' | null = null
+
+  function openGoto() {
+    if (!activePanel) return
+    lastGotoPanel = activePanel
+    gotoOpen = true
+    gotoValue = ''
+    // Foco al input despues del tick
+    queueMicrotask(() => gotoInputEl?.focus())
+  }
+
+  function closeGoto() {
+    gotoOpen = false
+    gotoValue = ''
+  }
+
+  function commitGoto() {
+    const n = parseInt(gotoValue, 10)
+    if (!Number.isFinite(n) || n < 1) {
+      closeGoto()
+      return
+    }
+    const panel = lastGotoPanel ?? activePanel
+    if (panel === 'html') htmlEditor?.gotoLine(n)
+    else if (panel === 'css') cssEditor?.gotoLine(n)
+    else if (panel === 'js') jsEditor?.gotoLine(n)
+    closeGoto()
   }
 
   function scheduleRender() {
@@ -257,7 +311,7 @@ boton?.addEventListener('click', () => {
     }
   })
 
-  // Effect (B6): listener global de teclado para undo/redo.
+  // Effect (B6): listener global de teclado para undo/redo y goto-line.
   // Solo actua si el focus esta dentro del playground.
   $effect(() => {
     if (typeof window === 'undefined') return
@@ -265,6 +319,16 @@ boton?.addEventListener('click', () => {
       const mod = ev.metaKey || ev.ctrlKey
       if (!mod) return
       const key = ev.key.toLowerCase()
+
+      // B8: Ctrl/Cmd+G -> paleta "Ir a linea"
+      if (key === 'g' && !ev.shiftKey) {
+        const target = ev.target as HTMLElement | null
+        if (!target || !target.closest('.html-playground')) return
+        ev.preventDefault()
+        openGoto()
+        return
+      }
+
       const isUndo = key === 'z' && !ev.shiftKey
       const isRedo =
         (key === 'z' && ev.shiftKey) || (key === 'y' && !ev.shiftKey)
@@ -366,6 +430,7 @@ boton?.addEventListener('click', () => {
     <div class="pane">
       <div class="pane-header">
         <span class="label">HTML</span>
+        <span class="cursor-info">Ln {cursorByPanel.html.line}, Col {cursorByPanel.html.col}</span>
         <div class="pane-actions">
           <button
             class="undo-btn"
@@ -392,12 +457,15 @@ boton?.addEventListener('click', () => {
         panel="html"
         history={htmlHistory}
         onHistoryChange={handleHtmlHistoryChange}
+        onCursorChange={handleHtmlCursor}
+        onFocus={() => (activePanel = 'html')}
       />
     </div>
 
     <div class="pane">
       <div class="pane-header">
         <span class="label">CSS</span>
+        <span class="cursor-info">Ln {cursorByPanel.css.line}, Col {cursorByPanel.css.col}</span>
         <div class="pane-actions">
           <button
             class="undo-btn"
@@ -424,12 +492,15 @@ boton?.addEventListener('click', () => {
         panel="css"
         history={cssHistory}
         onHistoryChange={handleCssHistoryChange}
+        onCursorChange={handleCssCursor}
+        onFocus={() => (activePanel = 'css')}
       />
     </div>
 
     <div class="pane">
       <div class="pane-header">
         <span class="label">JS</span>
+        <span class="cursor-info">Ln {cursorByPanel.js.line}, Col {cursorByPanel.js.col}</span>
         <div class="pane-actions">
           <button
             class="undo-btn"
@@ -456,6 +527,8 @@ boton?.addEventListener('click', () => {
         panel="js"
         history={jsHistory}
         onHistoryChange={handleJsHistoryChange}
+        onCursorChange={handleJsCursor}
+        onFocus={() => (activePanel = 'js')}
       />
     </div>
 
@@ -477,6 +550,34 @@ boton?.addEventListener('click', () => {
       {/if}
     </div>
   </div>
+
+  <!-- B8: paleta "Ir a linea" (Ctrl/Cmd+G) -->
+  {#if gotoOpen}
+    <div class="goto-overlay" role="dialog" aria-label="Ir a linea">
+      <div class="goto-box">
+        <label for="goto-input">Ir a linea:</label>
+        <input
+          id="goto-input"
+          bind:this={gotoInputEl}
+          bind:value={gotoValue}
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          placeholder="N"
+          onkeydown={(ev) => {
+            if (ev.key === 'Enter') {
+              ev.preventDefault()
+              commitGoto()
+            } else if (ev.key === 'Escape') {
+              ev.preventDefault()
+              closeGoto()
+            }
+          }}
+        />
+        <span class="goto-hint">Enter ↵ saltar · Esc cerrar</span>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -492,6 +593,7 @@ boton?.addEventListener('click', () => {
     overflow: hidden;
     background: var(--pg-bg);
     color: var(--pg-fg);
+    position: relative; /* B8: para que la goto-overlay se posicione aqui */
   }
 
   .topbar {
@@ -549,8 +651,8 @@ boton?.addEventListener('click', () => {
 
   .pane-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 0.8rem;
     padding: 0.4rem 0.8rem;
     background: #27272a;
     border-bottom: 1px solid var(--pg-border);
@@ -562,6 +664,62 @@ boton?.addEventListener('click', () => {
     font-weight: 700;
     color: var(--pg-accent);
     letter-spacing: 0.04em;
+  }
+
+  /* B8: indicador de cursor Ln X, Col Y */
+  .cursor-info {
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.75rem;
+    color: var(--pg-fg);
+    opacity: 0.55;
+    margin-right: auto; /* empuja las acciones a la derecha */
+  }
+
+  /* B8: paleta "Ir a linea" */
+  .goto-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 12%;
+    z-index: 50;
+  }
+  .goto-box {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #27272a;
+    border: 1px solid var(--pg-accent);
+    border-radius: 8px;
+    padding: 0.5rem 0.8rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+  .goto-box label {
+    font-size: 0.85rem;
+    color: var(--pg-fg);
+    font-family: ui-monospace, SFMono-Regular, monospace;
+  }
+  .goto-box input {
+    width: 4.5rem;
+    padding: 0.25rem 0.5rem;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.95rem;
+    background: #18181b;
+    color: var(--pg-fg);
+    border: 1px solid var(--pg-border);
+    border-radius: 4px;
+    outline: none;
+  }
+  .goto-box input:focus {
+    border-color: var(--pg-accent);
+  }
+  .goto-hint {
+    font-size: 0.7rem;
+    color: var(--pg-fg);
+    opacity: 0.5;
+    font-family: ui-monospace, SFMono-Regular, monospace;
   }
 
   textarea,
