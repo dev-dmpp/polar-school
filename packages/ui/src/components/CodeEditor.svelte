@@ -39,6 +39,7 @@
     projectFoldedNumbers,
     type FoldRange,
   } from '../lib/code-fold'
+  import { findBracketMatch, type Match } from '../lib/bracket-match'
 
   hljs.registerLanguage('javascript', javascript)
   hljs.registerLanguage('xml', xml)
@@ -75,6 +76,20 @@
   let lineCount = $derived(Math.max(1, value.split('\n').length))
   let currentLine = $state(1)
   let selectionStart = $state(0)
+
+  // B10: bracket/tag match bajo el cursor (null si no hay match).
+  // Se recalcula cuando cambia selectionStart o el value.
+  let bracketMatch = $state<Match | null>(null)
+
+  // B10: posicion visual del match (line/col en texto PROYECTADO si hay folds,
+  // si no en source directo). Se usa para posicionar el .match-marker overlay.
+  // Tambien guardamos el char/tag text para sizing del marker.
+  let matchVisual = $state<{
+    line: number // 1-based
+    col: number // 1-based
+    length: number // cuantos chars ocupa visualmente el match
+    text: string // el texto a mostrar (en caso de tag como '</body>')
+  } | null>(null)
 
   // B9: folds disponibles (rangos detectados del value actual).
   let availableFolds = $derived<Map<number, FoldRange>>(detectFolds(value, language))
@@ -123,6 +138,56 @@
     currentLine = line
     onCursorChange?.(line, col)
   }
+
+  // B10: recalcula bracket match cuando cambia cursor o value.
+  $effect(() => {
+    void selectionStart
+    void value
+    void language
+    const m = findBracketMatch(value, selectionStart, language)
+    bracketMatch = m
+
+    // B10: convertir offset source -> visual (line/col en texto proyectado).
+    if (!m) {
+      matchVisual = null
+      return
+    }
+    const skipLines = new Set<number>()
+    for (const startLine of collapsedFolds) {
+      const range = availableFolds.get(startLine)
+      if (!range) continue
+      for (let l = range.startLine + 1; l <= range.endLine; l++) {
+        skipLines.add(l)
+      }
+    }
+
+    // Si el match cae adentro de un fold colapsado, no mostrar
+    const matchLine =
+      value.substring(0, m.start).split('\n').length
+    if (skipLines.has(matchLine)) {
+      matchVisual = null
+      return
+    }
+
+    // Calcular visualLine: cuantas lineas del source ORIGINAL se renderizan
+    // hasta llegar a matchLine (saltando las que estan en skipLines).
+    let visualLine = 0
+    for (let i = 1; i <= matchLine; i++) {
+      if (!skipLines.has(i)) visualLine++
+    }
+
+    // Calcular visualCol: posicion dentro de la linea visual
+    const lineStart = value.lastIndexOf('\n', m.start - 1) + 1
+    const visualCol = m.start - lineStart + 1
+
+    const text = value.substring(m.start, m.end)
+    matchVisual = {
+      line: visualLine,
+      col: visualCol,
+      length: m.end - m.start,
+      text,
+    }
+  })
 
   // B8: salta a una linea (1-based). Posiciona el cursor al inicio
   // de esa linea. Si el numero es invalido, no hace nada.
@@ -260,6 +325,9 @@
       // para que el overlay quede alineado con el gutter.
       const projected = projectFoldedLines(value, collapsedFolds, availableFolds)
       const result = hljs.highlight(projected, { language, ignoreIllegals: true })
+      // B10: ya no envuelvo el match con un span (rompe HTML cuando cruza
+      // entities o spans de hljs). En su lugar, se renderiza un overlay DIV
+      // absoluto sobre el editor (ver .match-marker en el template).
       highlighted = result.value + '\n'
     } catch {
       const projected = projectFoldedLines(value, collapsedFolds, availableFolds)
@@ -462,6 +530,13 @@
       class="hljs language-{language} highlight-overlay"
       aria-hidden="true"
     >{@html highlighted}</pre>
+    <!-- B10: marker absoluto sobre el bracket/tag match -->
+    {#if matchVisual}
+      <div
+        class="match-marker"
+        style="top: calc(var(--gutter-pad-top, 0.6rem) + (var(--gutter-line-h, 1.275rem) * ({matchVisual.line - 1}))); left: calc(var(--gutter-pad-top, 0.6rem) + 0.85rem * 0.6 * ({matchVisual.col - 1})); width: calc(0.85rem * 0.6 * {matchVisual.length}); height: var(--gutter-line-h, 1.275rem);"
+      ></div>
+    {/if}
     <textarea
       bind:this={textareaEl}
       bind:value
@@ -481,12 +556,16 @@
 </div>
 
 <style>
+  /* B7: editor contenedor. */
   .code-editor {
     position: relative;
     flex: 1;
     display: flex;
     min-height: 0;
     background: var(--pg-bg, #1e1e1e);
+    /* B10: variables para posicionar marker. Tambien las usa B9 (chevrons). */
+    --gutter-pad-top: 0.6rem;
+    --gutter-line-h: 1.275rem; /* 0.85rem * 1.5 */
   }
 
   /* B7: gutter de numeros. B8: clickable (solo el pre hijo recibe clicks). */
@@ -499,9 +578,6 @@
     overflow: hidden;
     user-select: none;
     pointer-events: none;
-    /* B9: variables para posicionar chevrons */
-    --gutter-pad-top: 0.6rem;
-    --gutter-line-h: 1.275rem; /* 0.85rem * 1.5 */
   }
 
   .line-numbers {
@@ -642,6 +718,16 @@
   }
   :global(.hljs-tag) {
     color: #85e89d;
+  }
+
+  /* B10: bracket/tag match highlight (overlay DIV absoluto sobre el editor) */
+  .match-marker {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(217, 119, 6, 0.4);
+    box-shadow: 0 0 0 1px rgba(217, 119, 6, 0.7);
+    border-radius: 2px;
+    z-index: 3; /* sobre el highlight (z=1) y textarea (z=2) */
   }
 
   /* B9: capa de chevrons sobre el gutter */
