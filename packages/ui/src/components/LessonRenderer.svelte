@@ -20,6 +20,7 @@
    */
   import type { LessonKind } from '@polar-school/content'
   import SandboxTerminal from './SandboxTerminal.svelte'
+  import HtmlPlayground from './HtmlPlayground.svelte'
   import ReadingOnly from './ReadingOnly.svelte'
 
   interface Props {
@@ -49,10 +50,7 @@
       <h3>🌐 Playground HTML · live preview</h3>
     </div>
   {/if}
-  <ReadingOnly
-    message="HtmlPlayground está en construcción (iteración B3). Mientras tanto, podés probar HTML en tu editor local y refrescar esta página."
-    cta="Próximamente"
-  />
+  <HtmlPlayground client:only="svelte" {height} />
 {:else if kind === 'playground-git'}
   {#if showHeader}
     <div class="playground-header">
