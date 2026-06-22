@@ -2,26 +2,41 @@
   /**
    * HtmlPlayground — live HTML/CSS/JS preview en iframe sandbox.
    *
-   * 100% client-side. Sin backend, sin auth, sin persistencia.
+   * 100% client-side. Persiste el codigo del usuario en localStorage
+   * (B4), asi sobrevive al refresh. Cada lesson tiene su propio draft
+   * (storageKey por slug).
    *
    * Seguridad:
    *   - iframe sandbox="allow-scripts" (SIN allow-same-origin)
-   *     → scripts del usuario NO pueden leer cookies del origin real
-   *   - <base href="about:blank"> → scripts externos no se cargan
+   *     -> scripts del usuario NO pueden leer cookies del origin real
+   *   - <base href="about:blank"> -> scripts externos no se cargan
    *
    * UX:
    *   - 3 textareas (HTML, CSS, JS) con debounce 300ms auto-render
-   *   - Botones: Render (manual), Reset, Copy por panel
-   *   - Errores JS del iframe → overlay rojo
+   *   - Persistencia con debounce 500ms (B4)
+   *   - Indicador "Guardado" sutil al lado del header
+   *   - Botones: Render (manual), Reset (confirma + limpia storage), Copy por panel
+   *   - Errores JS del iframe -> overlay rojo
    */
-  import { onDestroy } from 'svelte'
+  import { onMount, onDestroy } from 'svelte'
   import { buildHtmlSrcdoc, isSrcdocTooBig } from '../lib/build-html-srcdoc'
+  import {
+    buildStorageKey,
+    loadDraft,
+    saveDraft,
+    clearDraft,
+    formatSavedAgo,
+  } from '../lib/playground-storage'
 
   interface Props {
     initialHtml?: string
     initialCss?: string
     initialJs?: string
     height?: string
+    /** Slug de la leccion para storage key por leccion. */
+    storageKey?: string
+    /** Si true, desactiva la persistencia (util para tests). */
+    disableStorage?: boolean
   }
 
   const DEFAULT_HTML = `<!DOCTYPE html>
@@ -32,8 +47,8 @@
 </head>
 <body>
   <h1>Hola mundo</h1>
-  <p>Editá este HTML y mirá el preview al lado.</p>
-  <button id="boton">Click acá</button>
+  <p>Edita este HTML y mira el preview al lado.</p>
+  <button id="boton">Click aca</button>
 </body>
 </html>`
 
@@ -67,25 +82,47 @@ boton?.addEventListener('click', () => {
     initialCss = DEFAULT_CSS,
     initialJs = DEFAULT_JS,
     height = '420px',
+    storageKey,
+    disableStorage = false,
   }: Props = $props()
 
+  // Storage key final (B4)
+  const finalStorageKey = disableStorage ? null : buildStorageKey(storageKey)
+
+  // Cargar draft existente al montar (B4)
+  function loadInitial(): { html: string; css: string; js: string } {
+    if (!finalStorageKey) {
+      return { html: initialHtml, css: initialCss, js: initialJs }
+    }
+    const draft = loadDraft(finalStorageKey)
+    if (draft) {
+      return { html: draft.html, css: draft.css, js: draft.js }
+    }
+    return { html: initialHtml, css: initialCss, js: initialJs }
+  }
+
+  const initial = loadInitial()
+
   // Estado editable
-  let html = $state(initialHtml)
-  let css = $state(initialCss)
-  let js = $state(initialJs)
+  let html = $state(initial.html)
+  let css = $state(initial.css)
+  let js = $state(initial.js)
   let lastError = $state<string | null>(null)
   let copyState = $state<'html' | 'css' | 'js' | null>(null)
 
-  // Iframe ref
+  // Estado de persistencia (B4)
+  let savedAt = $state<number | null>(initial.savedAt ?? null)
+  let savedLabel = $state<string>(initial.savedAt ? formatSavedAgo(initial.savedAt) : '')
+  let showSavedFlash = $state(false)
+  let saveError = $state<string | null>(null)
+
+  // Iframe ref + timers
   let iframe: HTMLIFrameElement | null = $state(null)
   let renderTimer: ReturnType<typeof setTimeout> | null = null
+  let saveTimer: ReturnType<typeof setTimeout> | null = null
+  let savedFlashTimer: ReturnType<typeof setTimeout> | null = null
+  let savedLabelTimer: ReturnType<typeof setInterval> | null = null
 
-  // Construye el srcdoc completo (HTML + CSS inyectado + JS inyectado)
-  // Logica extraida a ../lib/build-html-srcdoc.ts para evitar que el
-  // parser de Svelte confunda cierres de bloque script literales dentro
-  // de strings con el cierre del propio bloque script del componente.
-
-  // Render con debounce
   function scheduleRender() {
     if (renderTimer) clearTimeout(renderTimer)
     renderTimer = setTimeout(render, 300)
@@ -95,18 +132,56 @@ boton?.addEventListener('click', () => {
     if (!iframe) return
     const srcdoc = buildHtmlSrcdoc({ html, css, js })
     if (isSrcdocTooBig(srcdoc)) {
-      lastError = 'HTML demasiado grande (>200KB). Simplificá tu código.'
+      lastError = 'HTML demasiado grande (>200KB). Simplifica tu codigo.'
       return
     }
     lastError = null
     iframe.srcdoc = srcdoc
   }
 
-  // Reset a defaults
+  // Persistencia con debounce 500ms (B4)
+  function scheduleSave() {
+    if (!finalStorageKey) return
+    if (saveTimer) clearTimeout(saveTimer)
+    saveTimer = setTimeout(commitSave, 500)
+  }
+
+  function commitSave() {
+    if (!finalStorageKey) return
+    const result = saveDraft(finalStorageKey, { html, css, js })
+    if (result.ok) {
+      savedAt = result.savedAt
+      savedLabel = formatSavedAgo(result.savedAt)
+      saveError = null
+      showSavedFlash = true
+      if (savedFlashTimer) clearTimeout(savedFlashTimer)
+      savedFlashTimer = setTimeout(() => {
+        showSavedFlash = false
+      }, 1500)
+    } else {
+      // Silencioso en UI pero dejamos el reason para debug
+      saveError = result.reason
+    }
+  }
+
+  // Reset a defaults + limpia storage
   function reset() {
+    const hasChanges =
+      html !== initialHtml || css !== initialCss || js !== initialJs
+    if (hasChanges && typeof window !== 'undefined') {
+      const ok = window.confirm(
+        'Esto borra tus cambios y vuelve al codigo inicial. Continuar?',
+      )
+      if (!ok) return
+    }
     html = initialHtml
     css = initialCss
     js = initialJs
+    if (finalStorageKey) clearDraft(finalStorageKey)
+    savedAt = null
+    savedLabel = ''
+    showSavedFlash = false
+    saveError = null
     render()
   }
 
@@ -131,6 +206,7 @@ boton?.addEventListener('click', () => {
     }
   }
 
+  // Effect: registrar listener de errores del iframe
   $effect(() => {
     if (typeof window !== 'undefined') {
       window.addEventListener('message', handleMessage)
@@ -138,9 +214,8 @@ boton?.addEventListener('click', () => {
     }
   })
 
-  // Render inicial al montar
+  // Effect: render cuando cambian html/css/js o se monta el iframe
   $effect(() => {
-    // dependencias implícitas: html, css, js (state) + iframe (ref)
     void html
     void css
     void js
@@ -148,12 +223,62 @@ boton?.addEventListener('click', () => {
     scheduleRender()
   })
 
+  // Effect (B4): persistir cuando cambian html/css/js (despues del mount)
+  let mounted = $state(false)
+  $effect(() => {
+    void html
+    void css
+    void js
+    if (!mounted) return
+    if (!finalStorageKey) return
+    scheduleSave()
+  })
+
+  // Effect: refrescar el label "Guardado hace X" cada 30s
+  $effect(() => {
+    if (typeof window === 'undefined') return
+    if (!finalStorageKey) return
+    savedLabelTimer = setInterval(() => {
+      if (savedAt) savedLabel = formatSavedAgo(savedAt)
+    }, 30_000)
+    return () => {
+      if (savedLabelTimer) clearInterval(savedLabelTimer)
+    }
+  })
+
+  onMount(() => {
+    // Marca mounted=true despues del primer render para que el effect de
+    // save no dispare al cargar el draft inicial.
+    mounted = true
+  })
+
   onDestroy(() => {
     if (renderTimer) clearTimeout(renderTimer)
+    if (saveTimer) clearTimeout(saveTimer)
+    if (savedFlashTimer) clearTimeout(savedFlashTimer)
+    if (savedLabelTimer) clearInterval(savedLabelTimer)
   })
 </script>
 
 <div class="html-playground" style="--pg-height: {height}">
+  <div class="topbar">
+    <span class="saved-indicator" class:flash={showSavedFlash}>
+      {#if savedAt}
+        {#if showSavedFlash}
+          <span class="check">✓</span> Guardado
+        {:else}
+          💾 Guardado {savedLabel}
+        {/if}
+      {:else if finalStorageKey}
+        <span class="muted">Sin guardar</span>
+      {/if}
+    </span>
+    {#if saveError}
+      <span class="save-error" title={saveError}>
+        ⚠ No se pudo guardar (modo incognito?)
+      </span>
+    {/if}
+  </div>
   <div class="panes">
     <div class="pane">
       <div class="pane-header">
@@ -226,12 +351,45 @@ boton?.addEventListener('click', () => {
     --pg-fg: #e4e4e7;
     --pg-border: #3f3f46;
     --pg-accent: #d97706;
+    --pg-success: #22c55e;
 
     border: 2px solid var(--pg-border);
     border-radius: 12px;
     overflow: hidden;
     background: var(--pg-bg);
     color: var(--pg-fg);
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.4rem 0.9rem;
+    background: #27272a;
+    border-bottom: 1px solid var(--pg-border);
+    font-size: 0.78rem;
+    min-height: 1.6rem;
+  }
+
+  .saved-indicator {
+    color: var(--pg-fg);
+    opacity: 0.85;
+    transition: color 0.2s;
+  }
+  .saved-indicator .muted {
+    opacity: 0.45;
+  }
+  .saved-indicator.flash {
+    color: var(--pg-success);
+    opacity: 1;
+  }
+  .saved-indicator .check {
+    font-weight: 700;
+  }
+  .save-error {
+    color: #fca5a5;
+    cursor: help;
   }
 
   .panes {

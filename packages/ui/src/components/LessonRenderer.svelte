@@ -26,13 +26,15 @@
   interface Props {
     kind: LessonKind
     title?: string
+    /** Slug de la leccion, usado para storage key del playground. */
+    slug?: string
     /** Sandbox height override. Default 380px. */
     height?: string
     /** Si true, muestra un header con el nombre del playground. */
     showHeader?: boolean
   }
 
-  let { kind, title, height = '380px', showHeader = true }: Props = $props()
+  let { kind, title, slug, height = '380px', showHeader = true }: Props = $props()
 </script>
 
 {#if kind === 'terminal-linux'}
@@ -50,7 +52,7 @@
       <h3>🌐 Playground HTML · live preview</h3>
     </div>
   {/if}
-  <HtmlPlayground client:only="svelte" {height} />
+  <HtmlPlayground client:only="svelte" {height} storageKey={slug} />
 {:else if kind === 'playground-git'}
   {#if showHeader}
     <div class="playground-header">
