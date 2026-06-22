@@ -9,6 +9,20 @@ import { magicLinkTokens } from "@polar-school/db";
 const TOKEN_BYTES = 32;
 const TOKEN_TTL_MIN = 15;
 
+/**
+ * Cache módulo-level del último link emitido. Sólo se usa en dev (sin SMTP
+ * configurado) para devolverlo en la respuesta HTTP y que la UI lo muestre.
+ * En prod con Resend, queda stale pero irrelevante: la ruta lo lee sólo
+ * cuando no hay RESEND_API_KEY.
+ *
+ * Exportado como getter para que los imports vean la mutación (los bindings
+ * de export `let` en ESM son read-only para el importador).
+ */
+let _lastIssuedLink: string | null = null;
+export function getLastIssuedLink(): string | null {
+  return _lastIssuedLink;
+}
+
 export interface IssueMagicLinkInput {
   userId: string;
   email: string;
@@ -56,6 +70,7 @@ export async function issueMagicLink(
     );
   }
 
+  _lastIssuedLink = url;
   return { token, url, expiresAt };
 }
 

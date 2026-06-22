@@ -22,6 +22,9 @@ export const TMPFS_SIZE_MB = 64;
 /** Minutos de inactividad antes de matar el contenedor. */
 export const IDLE_TIMEOUT_MIN = 15;
 
+/** Minutos de inactividad para contenedores anónimos (más corto: VPS recurso). */
+export const ANON_IDLE_TIMEOUT_MIN = 5;
+
 /** Minutos desde createdAt antes de marcar un container como huérfano (sin dueño en el mapa). */
 export const ORPHAN_TIMEOUT_MIN = 30;
 
@@ -30,6 +33,10 @@ export const MAX_PER_USER = 3;
 
 /** Máximo de contenedores totales en el VPS. */
 export const MAX_TOTAL = 20;
+
+/** Máximo de contenedores anónimos simultáneos en el VPS. Más restrictivo
+ *  que MAX_PER_USER porque anonymous = abuseable (no hay user_id real). */
+export const MAX_ANON_TOTAL = 5;
 
 /** Cada cuántos minutos corre el cleanup. */
 export const CLEANUP_INTERVAL_MIN = 5;

@@ -20,7 +20,7 @@ export const linuxIntermedio: Course = {
       difficulty: 'intermedio',
       category: 'servicios',
       readTime: 4,
-      example: '$ systemctl status nginx.service\n● nginx.service - A high performance web server and reverse proxy server\n     Loaded: loaded (/lib/systemd/system/nginx.service; enabled)\n     Active: active (running) since Mon 2026-06-15 10:00:00 UTC',
+      kind: 'terminal-linux',      example: '$ systemctl status nginx.service\n● nginx.service - A high performance web server and reverse proxy server\n     Loaded: loaded (/lib/systemd/system/nginx.service; enabled)\n     Active: active (running) since Mon 2026-06-15 10:00:00 UTC',
       tip: 'Los 3 campos clave: Loaded (está instalado y configurado), Active (corriendo ahora), y el PID (qué proceso es).',
     },
     {
@@ -32,7 +32,7 @@ export const linuxIntermedio: Course = {
       difficulty: 'intermedio',
       category: 'servicios',
       readTime: 4,
-      example: '$ sudo systemctl restart nginx.service\n[simulado] El servicio nginx se reinició y ahora corre con la configuración nueva.',
+      kind: 'terminal-linux',      example: '$ sudo systemctl restart nginx.service\n[simulado] El servicio nginx se reinició y ahora corre con la configuración nueva.',
       tip: 'Si cambias un archivo de configuración, restart es lo normal. Si solo quieres aplicar cambios sin cortar conexiones, prueba reload (no todos los servicios lo soportan).',
     },
     {
@@ -44,7 +44,7 @@ export const linuxIntermedio: Course = {
       difficulty: 'intermedio',
       category: 'servicios',
       readTime: 3,
-      example: '$ sudo systemctl enable nginx.service\nSynchronizing state of nginx.service with SysV service script.',
+      kind: 'terminal-linux',      example: '$ sudo systemctl enable nginx.service\nSynchronizing state of nginx.service with SysV service script.',
       tip: 'enable no inicia el servicio ahora, solo lo configura para el próximo reinicio. Si quieres ambos, usa enable --now.',
     },
     {
@@ -56,7 +56,7 @@ export const linuxIntermedio: Course = {
       difficulty: 'intermedio',
       category: 'logs',
       readTime: 5,
-      example: '$ journalctl -u nginx.service --since "1 hour ago"\n-- Logs begin at Mon 2026-06-15 00:00:00 UTC --\nJun 19 12:01:12 polar nginx[1234]: 192.168.1.50 - - "GET / HTTP/1.1" 200 1234',
+      kind: 'terminal-linux',      example: '$ journalctl -u nginx.service --since "1 hour ago"\n-- Logs begin at Mon 2026-06-15 00:00:00 UTC --\nJun 19 12:01:12 polar nginx[1234]: 192.168.1.50 - - "GET / HTTP/1.1" 200 1234',
       tip: 'Filtros útiles: -u servicio (logs de un servicio), --since "fecha", -f (follow, como tail -f), -n N (últimas N líneas).',
     },
     {
@@ -68,7 +68,7 @@ export const linuxIntermedio: Course = {
       difficulty: 'intermedio',
       category: 'servicios',
       readTime: 2,
-      example: '$ sudo service nginx status\n * nginx is running',
+      kind: 'terminal-linux',      example: '$ sudo service nginx status\n * nginx is running',
       tip: 'Para servidores nuevos siempre usa systemctl. service aparece en tutoriales viejos, en scripts antiguos, y en imágenes Docker minimalistas sin systemd.',
     },
     {
@@ -80,7 +80,7 @@ export const linuxIntermedio: Course = {
       difficulty: 'intermedio',
       category: 'logs',
       readTime: 3,
-      example: '$ tail -f /var/log/nginx/access.log\n192.168.1.50 - - [19/Jun/2026:12:01:12 +0000] "GET / HTTP/1.1" 200 1234\n192.168.1.51 - - [19/Jun/2026:12:01:15 +0000] "GET /style.css HTTP/1.1" 200 567',
+      kind: 'terminal-linux',      example: '$ tail -f /var/log/nginx/access.log\n192.168.1.50 - - [19/Jun/2026:12:01:12 +0000] "GET / HTTP/1.1" 200 1234\n192.168.1.51 - - [19/Jun/2026:12:01:15 +0000] "GET /style.css HTTP/1.1" 200 567',
       tip: 'Ctrl+C para salir del modo follow. -n 50 muestra las últimas 50 líneas antes de seguir. Equivalente en systemd: journalctl -f.',
     },
     {
@@ -92,7 +92,7 @@ export const linuxIntermedio: Course = {
       difficulty: 'intermedio',
       category: 'texto',
       readTime: 6,
-      example: '$ cat logs.txt | sort | uniq | wc -l\n47',
+      kind: 'terminal-linux',      example: '$ cat logs.txt | sort | uniq | wc -l\n47',
       tip: 'Combinados con pipes (|) son brutales para analizar logs: cat + sort + uniq + wc te da el resumen en una línea.',
     },
     {
@@ -104,7 +104,7 @@ export const linuxIntermedio: Course = {
       difficulty: 'intermedio',
       category: 'compresion',
       readTime: 4,
-      example: '$ tar -czf backup.tar.gz proyectos/\n[simulado] backup.tar.gz creado (compresión con gzip)\n\n$ tar -xzf backup.tar.gz\nExtraídas 5 entradas',
+      kind: 'terminal-linux',      example: '$ tar -czf backup.tar.gz proyectos/\n[simulado] backup.tar.gz creado (compresión con gzip)\n\n$ tar -xzf backup.tar.gz\nExtraídas 5 entradas',
       tip: 'Flags clave: -c crear, -x extraer, -t listar, -z gzip, -j bzip2, -f archivo. Casi siempre: -czf para crear, -xzf para extraer.',
     },
     {
@@ -116,7 +116,7 @@ export const linuxIntermedio: Course = {
       difficulty: 'intermedio',
       category: 'disco',
       readTime: 4,
-      example: '$ df -h\nS.Archivos     Tamaño Usados  Disp Uso% Montado en\n/dev/sda1        50G    12G   36G  25% /\ntmpfs            2G     0M    2G   0% /dev/shm\n\n$ du -sh proyectos/\n4,0K\tproyectos/',
+      kind: 'terminal-linux',      example: '$ df -h\nS.Archivos     Tamaño Usados  Disp Uso% Montado en\n/dev/sda1        50G    12G   36G  25% /\ntmpfs            2G     0M    2G   0% /dev/shm\n\n$ du -sh proyectos/\n4,0K\tproyectos/',
       tip: 'Si df muestra 100% uso, busca carpetas grandes con du -sh /* | sort -h y borra lo que no necesites (logs viejos, cache, node_modules).',
     },
     {
@@ -128,7 +128,7 @@ export const linuxIntermedio: Course = {
       difficulty: 'intermedio',
       category: 'memoria',
       readTime: 5,
-      example: '$ free -h\n              total      used      free    shared  buff/cache   available\nMem:          4,0Gi    1,0Gi    2,0Gi     256Mi     800Mi    2,8Gi\nSwap:           0B        0B        0B\n\n$ top\n  PID USUARIO   PR  NI    VIRT    RES  SHR S  %CPU  %MEM\n 1234 polar     20   0  1024M   128M   16M S   0,5   3,1   bash',
+      kind: 'terminal-linux',      example: '$ free -h\n              total      used      free    shared  buff/cache   available\nMem:          4,0Gi    1,0Gi    2,0Gi     256Mi     800Mi    2,8Gi\nSwap:           0B        0B        0B\n\n$ top\n  PID USUARIO   PR  NI    VIRT    RES  SHR S  %CPU  %MEM\n 1234 polar     20   0  1024M   128M   16M S   0,5   3,1   bash',
       tip: 'Si free dice "available" mucho menor que "total", tu sistema está usando swap (disco como RAM), lo cual es lento. Busca el proceso pesado con top y reinícialo.',
     },
   ],

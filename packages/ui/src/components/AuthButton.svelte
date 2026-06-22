@@ -24,6 +24,8 @@
   let message = $state('');
   let messageKind = $state<'info' | 'error'>('info');
   let submitting = $state(false);
+  let devLink = $state<string | null>(null);
+  let copied = $state(false);
 
   function showInfo(msg: string) { message = msg; messageKind = 'info'; }
   function showError(msg: string) { message = msg; messageKind = 'error'; }
@@ -106,6 +108,8 @@
     e.preventDefault();
     if (submitting) return;
     submitting = true;
+    devLink = null;
+    copied = false;
     showInfo('Enviando enlace...');
     try {
       const r = await fetch(`${API}/auth/magic-link`, {
@@ -119,13 +123,43 @@
         showError(j.error ?? 'No se pudo enviar el enlace');
         return;
       }
-      showInfo('Si el correo está registrado, recibirás un enlace en breve. Revisa tu bandeja.');
-      setTimeout(closeModal, 1800);
+      // En dev (sin SMTP configurado), el backend devuelve devUrl para que
+      // podamos completar el login sin esperar un mail real. En prod esto
+      // queda undefined y mostramos el mensaje estándar.
+      if (j.devUrl) {
+        devLink = j.devUrl;
+        showInfo('Enlace generado. Ábrelo para iniciar sesión (válido por 15 minutos).');
+      } else {
+        showInfo('Si el correo está registrado, recibirás un enlace en breve. Revisa tu bandeja.');
+        setTimeout(closeModal, 1800);
+      }
     } catch (e: any) {
       showError(e?.message ?? 'Error de red');
     } finally {
       submitting = false;
     }
+  }
+
+  async function copyDevLink() {
+    if (!devLink) return;
+    try {
+      await navigator.clipboard.writeText(devLink);
+      copied = true;
+      setTimeout(() => { copied = false; }, 2000);
+    } catch {
+      // Fallback si clipboard API falla (HTTP, permisos, etc.)
+      const ta = document.createElement('textarea');
+      ta.value = devLink;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); copied = true; } catch {}
+      document.body.removeChild(ta);
+      setTimeout(() => { copied = false; }, 2000);
+    }
+  }
+
+  function openDevLink() {
+    if (devLink) window.location.href = devLink;
   }
 
   async function logout() {
@@ -142,8 +176,8 @@
 
   function openLogin()   { modal = 'login';   email = ''; password = ''; displayName = ''; message = ''; }
   function openRegister(){ modal = 'register';email = ''; password = ''; displayName = ''; message = ''; }
-  function openMagic()   { modal = 'magic';   email = ''; message = ''; }
-  function closeModal()  { modal = 'closed';  message = ''; }
+  function openMagic()   { modal = 'magic';   email = ''; message = ''; devLink = null; copied = false; }
+  function closeModal()  { modal = 'closed';  message = ''; devLink = null; copied = false; }
 
   function handleKey(e: KeyboardEvent) {
     if (e.key === 'Escape') closeModal();
@@ -226,19 +260,40 @@
         </p>
       {:else if modal === 'magic'}
         <h2 id="auth-modal-title">Recibir enlace mágico</h2>
-        <p class="modal-intro">Te enviamos un enlace por correo. Válido por 15 minutos.</p>
-        <form onsubmit={submitMagic}>
-          <label>
-            <span>Correo</span>
-            <input type="email" bind:value={email} required autocomplete="email" />
-          </label>
-          <button type="submit" class="btn btn-primary" disabled={submitting}>
-            {submitting ? 'Enviando...' : 'Enviar enlace'}
-          </button>
-        </form>
-        <p class="modal-foot">
-          <button type="button" class="link" onclick={openLogin}>Volver a iniciar sesión</button>
-        </p>
+        {#if !devLink}
+          <p class="modal-intro">Te enviamos un enlace por correo. Válido por 15 minutos.</p>
+          <form onsubmit={submitMagic}>
+            <label>
+              <span>Correo</span>
+              <input type="email" bind:value={email} required autocomplete="email" />
+            </label>
+            <button type="submit" class="btn btn-primary" disabled={submitting}>
+              {submitting ? 'Enviando...' : 'Enviar enlace'}
+            </button>
+          </form>
+          <p class="modal-foot">
+            <button type="button" class="link" onclick={openLogin}>Volver a iniciar sesión</button>
+          </p>
+        {:else}
+          <p class="modal-intro">
+            Estás en un entorno sin SMTP configurado, así que el enlace no se envió por mail.
+            Ábrelo desde aquí para iniciar sesión (válido por 15 minutos).
+          </p>
+          <div class="dev-link-box">
+            <code class="dev-link">{devLink}</code>
+          </div>
+          <div class="dev-link-actions">
+            <button type="button" class="btn btn-primary" onclick={openDevLink}>
+              Abrir enlace
+            </button>
+            <button type="button" class="btn btn-ghost" onclick={copyDevLink}>
+              {copied ? 'Copiado ✓' : 'Copiar'}
+            </button>
+          </div>
+          <p class="modal-foot">
+            <button type="button" class="link" onclick={openMagic}>Pedir otro enlace</button>
+          </p>
+        {/if}
       {/if}
 
       {#if message}
@@ -401,5 +456,34 @@
   .modal-msg.error {
     background: #fde2dc;
     color: #8a2a18;
+  }
+
+  .dev-link-box {
+    background: var(--paper-warm, #f5e9c8);
+    border: 1px solid var(--wood, #d4c7a8);
+    border-radius: 6px;
+    padding: 0.7rem 0.8rem;
+    margin: 0.5rem 0 1rem;
+    word-break: break-all;
+    max-height: 6rem;
+    overflow-y: auto;
+  }
+
+  .dev-link {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.8rem;
+    color: var(--ink, #2a2218);
+    line-height: 1.4;
+    user-select: all;
+  }
+
+  .dev-link-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .dev-link-actions .btn {
+    flex: 1;
   }
 </style>

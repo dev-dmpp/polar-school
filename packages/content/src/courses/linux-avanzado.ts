@@ -20,7 +20,7 @@ export const linuxAvanzado: Course = {
       difficulty: 'avanzado',
       category: 'procesos',
       readTime: 5,
-      example:
+      kind: 'terminal-linux',      example:
         '$ ps aux\nUSER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nroot         1  0.0  0.1 168920 11844 ?        Ss   Jun15   0:01 /sbin/init\nroot       387  0.0  0.2  72340  9324 ?        Ss   Jun15   0:00 sshd: /usr/sbin/sshd\npolar      421  0.0  0.1  21032  5120 pts/0    Ss   10:00   0:00 -bash\npolar      587  0.0  0.0  38820  3456 pts/0    R+   12:34   0:00 ps aux',
       tip: 'STAT muestra el estado: S (sleeping), R (running), Z (zombie — malo). Si ves muchos Z, hay un proceso que no se limpió.',
     },
@@ -33,7 +33,7 @@ export const linuxAvanzado: Course = {
       difficulty: 'avanzado',
       category: 'procesos',
       readTime: 4,
-      example:
+      kind: 'terminal-linux',      example:
         '$ kill 587\n[simulado] Proceso 587 terminado (SIGTERM)\n\n$ kill -9 421\n[simulado] Proceso 421 terminado forzosamente (SIGKILL)',
       tip: 'kill envía SIGTERM (terminar amablemente). Si el proceso no responde, kill -9 manda SIGKILL (forzar). Usá -9 como último recurso.',
     },
@@ -46,7 +46,7 @@ export const linuxAvanzado: Course = {
       difficulty: 'avanzado',
       category: 'permisos',
       readTime: 5,
-      example:
+      kind: 'terminal-linux',      example:
         '$ chmod -R 755 /var/www/mi-sitio\n\n$ ls -la /var/www/mi-sitio\ndrwxr-xr-x  root root  config/\n-rwxr-xr-x  root root  index.html\n-rwxr-xr-x  root root  app.js',
       tip: '755 es el permiso estándar para sitios web: el dueño puede escribir, el resto solo leer y ejecutar. Para archivos privados usas 600 o 700.',
     },
@@ -59,7 +59,7 @@ export const linuxAvanzado: Course = {
       difficulty: 'avanzado',
       category: 'permisos',
       readTime: 5,
-      example:
+      kind: 'terminal-linux',      example:
         '$ chown polar:www-data /var/www/mi-sitio\n$ chown -R polar:developers /home/polar/proyecto\n\n$ ls -la archivo.txt\n-rw-r--r-- 1 polar developers archivo.txt',
       tip: 'La sintaxis usuario:grupo cambia ambos. Si solo quieres cambiar el usuario, puedes omitir el grupo: chown polar archivo.txt',
     },
@@ -72,7 +72,7 @@ export const linuxAvanzado: Course = {
       difficulty: 'avanzado',
       category: 'permisos',
       readTime: 5,
-      example:
+      kind: 'terminal-linux',      example:
         '$ sudo useradd -m visitante\n$ sudo groupadd developers\n$ sudo usermod -aG developers polar\n$ groups polar\npolar : polar sudo www-data docker developers',
       tip: 'El flag -m en useradd crea el home directory automáticamente. Sin -m el usuario existe pero no tiene carpeta home, lo que rompe muchas herramientas.',
     },
@@ -85,7 +85,7 @@ export const linuxAvanzado: Course = {
       difficulty: 'avanzado',
       category: 'red',
       readTime: 5,
-      example:
+      kind: 'terminal-linux',      example:
         '$ ss -tulpn\nState     Recv-Q  Send-Q   Local Address:Port     Peer Address:Port   Process\nLISTEN    0       128            0.0.0.0:22            0.0.0.0:*       users:(("sshd",pid=387,fd=3))\nLISTEN    0       511            0.0.0.0:80            0.0.0.0:*       users:(("nginx",pid=612,fd=6))\nLISTEN    0       4096           127.0.0.1:5432        0.0.0.0:*       users:(("postgres",pid=890,fd=4))',
       tip: "El -p necesita permisos de root para mostrar el nombre del proceso. Sin -p ves los puertos pero no quién los abrió.",
     },
@@ -98,7 +98,7 @@ export const linuxAvanzado: Course = {
       difficulty: 'avanzado',
       category: 'red',
       readTime: 4,
-      example:
+      kind: 'terminal-linux',      example:
         '$ netstat -tulpn\nProto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name\ntcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      387/sshd\ntcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      612/nginx\ntcp        0      0 127.0.0.1:5432          0.0.0.0:*               LISTEN      890/postgres',
       tip: "En sistemas nuevos ss es más rápido y muestra más info. Pero si lees un tutorial viejo con netstat, ya sabes interpretarlo.",
     },
@@ -111,7 +111,7 @@ export const linuxAvanzado: Course = {
       difficulty: 'avanzado',
       category: 'red',
       readTime: 4,
-      example:
+      kind: 'terminal-linux',      example:
         '$ ping -c 3 google.com\nPING google.com (142.250.190.46) 56(84) bytes of data.\n64 bytes from 142.250.190.46: icmp_seq=1 ttl=56 time=14.2 ms\n64 bytes from 142.250.190.46: icmp_seq=2 ttl=56 time=13.8 ms\n64 bytes from 142.250.190.46: icmp_seq=3 ttl=56 time=15.1 ms\n\n--- google.com ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss',
       tip: "El flag -c 3 limita a 3 paquetes. Sin -c, ping corre para siempre y hay que cancelarlo con Ctrl+C.",
     },
@@ -124,7 +124,7 @@ export const linuxAvanzado: Course = {
       difficulty: 'avanzado',
       category: 'automatizacion',
       readTime: 5,
-      example:
+      kind: 'terminal-linux',      example:
         '$ crontab -l\n# m h dom mon dow command\n0 3 * * * /usr/local/bin/backup.sh\n*/15 * * * * /usr/bin/php /var/www/cron.php\n@reboot systemctl restart nginx.service',
       tip: "El campo */15 significa \"cada 15\". @reboot es un shortcut para \"al iniciar el sistema\". Para editar: crontab -e.",
     },
@@ -137,7 +137,7 @@ export const linuxAvanzado: Course = {
       difficulty: 'avanzado',
       category: 'sistema',
       readTime: 4,
-      example:
+      kind: 'terminal-linux',      example:
         '$ which node\n/usr/bin/node\n\n$ which python3\n/usr/bin/python3\n\n$ env\nUSER=polar\nHOME=/home/polar\nPATH=/usr/local/bin:/usr/bin:/bin\nSHELL=/bin/bash',
       tip: "Si un comando \"no existe\" pero sabes que está instalado, which te dice dónde buscarlo. env | grep PATH te muestra dónde se buscan los ejecutables.",
     },

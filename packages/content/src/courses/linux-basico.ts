@@ -19,6 +19,7 @@ export const linuxBasico: Course = {
       difficulty: 'basico',
       category: 'navegacion',
       readTime: 3,
+      kind: 'terminal-linux',
     },
     {
       slug: '02-ls',
@@ -28,6 +29,7 @@ export const linuxBasico: Course = {
       difficulty: 'basico',
       category: 'navegacion',
       readTime: 4,
+      kind: 'terminal-linux',
     },
     {
       slug: '03-cd',
@@ -37,6 +39,7 @@ export const linuxBasico: Course = {
       difficulty: 'basico',
       category: 'navegacion',
       readTime: 4,
+      kind: 'terminal-linux',
     },
     {
       slug: '04-mkdir',
@@ -46,6 +49,7 @@ export const linuxBasico: Course = {
       difficulty: 'basico',
       category: 'archivos',
       readTime: 3,
+      kind: 'terminal-linux',
     },
     {
       slug: '05-touch',
@@ -55,6 +59,7 @@ export const linuxBasico: Course = {
       difficulty: 'basico',
       category: 'archivos',
       readTime: 2,
+      kind: 'terminal-linux',
     },
     {
       slug: '06-cat',
@@ -64,6 +69,7 @@ export const linuxBasico: Course = {
       difficulty: 'basico',
       category: 'texto',
       readTime: 4,
+      kind: 'terminal-linux',
     },
     {
       slug: '07-less',
@@ -73,6 +79,7 @@ export const linuxBasico: Course = {
       difficulty: 'basico',
       category: 'texto',
       readTime: 4,
+      kind: 'terminal-linux',
     },
     {
       slug: '08-cp',
@@ -82,6 +89,7 @@ export const linuxBasico: Course = {
       difficulty: 'basico',
       category: 'archivos',
       readTime: 3,
+      kind: 'terminal-linux',
     },
     {
       slug: '09-mv',
@@ -91,6 +99,7 @@ export const linuxBasico: Course = {
       difficulty: 'basico',
       category: 'archivos',
       readTime: 3,
+      kind: 'terminal-linux',
     },
     {
       slug: '10-rm',
@@ -100,6 +109,7 @@ export const linuxBasico: Course = {
       difficulty: 'basico',
       category: 'archivos',
       readTime: 4,
+      kind: 'terminal-linux',
     },
     {
       slug: '11-echo',
@@ -109,6 +119,7 @@ export const linuxBasico: Course = {
       difficulty: 'basico',
       category: 'texto',
       readTime: 3,
+      kind: 'terminal-linux',
     },
     {
       slug: '12-redirigir',
@@ -118,6 +129,7 @@ export const linuxBasico: Course = {
       difficulty: 'intermedio',
       category: 'texto',
       readTime: 5,
+      kind: 'terminal-linux',
     },
     {
       slug: '13-pipe',
@@ -127,6 +139,7 @@ export const linuxBasico: Course = {
       difficulty: 'intermedio',
       category: 'texto',
       readTime: 5,
+      kind: 'terminal-linux',
     },
     {
       slug: '14-grep',
@@ -136,6 +149,7 @@ export const linuxBasico: Course = {
       difficulty: 'intermedio',
       category: 'texto',
       readTime: 5,
+      kind: 'terminal-linux',
     },
     {
       slug: '15-find',
@@ -145,6 +159,7 @@ export const linuxBasico: Course = {
       difficulty: 'intermedio',
       category: 'archivos',
       readTime: 5,
+      kind: 'terminal-linux',
     },
     {
       slug: '16-chmod',
@@ -154,6 +169,7 @@ export const linuxBasico: Course = {
       difficulty: 'intermedio',
       category: 'permisos',
       readTime: 7,
+      kind: 'terminal-linux',
     },
     {
       slug: '17-sudo',
@@ -163,6 +179,7 @@ export const linuxBasico: Course = {
       difficulty: 'intermedio',
       category: 'permisos',
       readTime: 4,
+      kind: 'terminal-linux',
     },
     {
       slug: '18-ps',
@@ -172,6 +189,7 @@ export const linuxBasico: Course = {
       difficulty: 'intermedio',
       category: 'procesos',
       readTime: 5,
+      kind: 'terminal-linux',
     },
     {
       slug: '19-kill',
@@ -181,6 +199,7 @@ export const linuxBasico: Course = {
       difficulty: 'intermedio',
       category: 'procesos',
       readTime: 4,
+      kind: 'terminal-linux',
     },
     {
       slug: '20-man',
@@ -190,6 +209,7 @@ export const linuxBasico: Course = {
       difficulty: 'basico',
       category: 'navegacion',
       readTime: 4,
+      kind: 'terminal-linux',
     },
   ],
 }

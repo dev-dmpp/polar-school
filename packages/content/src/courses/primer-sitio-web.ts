@@ -20,7 +20,7 @@ export const primerSitioWeb: Course = {
       difficulty: 'basico',
       category: 'web',
       readTime: 4,
-      example:
+      kind: 'playground-html',      example:
         '<!-- Un archivo HTML básico -->\n<!DOCTYPE html>\n<html lang="es">\n<head>\n  <meta charset="UTF-8">\n  <title>Mi primer sitio</title>\n</head>\n<body>\n  <h1>Hola mundo</h1>\n  <p>Esta es mi primera página web.</p>\n</body>\n</html>',
       tip: "lang=\"es\" indica que el contenido está en español. charset=\"UTF-8\" permite tildes y emojis correctamente. Estas dos líneas evitan el 80% de los problemas iniciales.",
     },
@@ -33,7 +33,7 @@ export const primerSitioWeb: Course = {
       difficulty: 'basico',
       category: 'web',
       readTime: 5,
-      example:
+      kind: 'playground-html',      example:
         '<!DOCTYPE html>\n<html lang="es">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Título que aparece en la pestaña</title>\n</head>\n<body>\n  <!-- Acá va todo el contenido visible -->\n  <header>Logo y navegación</header>\n  <main>Contenido principal</main>\n  <footer>Pie de página</footer>\n</body>\n</html>',
       tip: 'Las etiquetas semánticas (header, main, footer, nav, article) ayudan al SEO y a la accesibilidad. Mejor que llenar todo de <div>.',
     },
@@ -46,7 +46,7 @@ export const primerSitioWeb: Course = {
       difficulty: 'basico',
       category: 'web',
       readTime: 5,
-      example:
+      kind: 'playground-html',      example:
         '<body>\n  <h1>Bienvenido a mi sitio</h1>\n  <h2>Sobre mí</h2>\n  <p>Soy <strong>desarrollador</strong> y me gusta el café.</p>\n  <p>Escribime a <a href="mailto:hola@ejemplo.com">hola@ejemplo.com</a></p>\n  <p>O mira mi <a href="https://github.com/dev-dmpp" target="_blank">GitHub</a></p>\n  <img src="foto.jpg" alt="Mi foto de perfil">\n</body>',
       tip: "El atributo alt en imágenes es obligatorio para accesibilidad: lo leen los lectores de pantalla y se muestra si la imagen no carga.",
     },
@@ -59,7 +59,7 @@ export const primerSitioWeb: Course = {
       difficulty: 'basico',
       category: 'web',
       readTime: 5,
-      example:
+      kind: 'playground-html',      example:
         '/* estilo.css */\nbody {\n  font-family: system-ui, sans-serif;\n  max-width: 720px;\n  margin: 0 auto;\n  padding: 1rem;\n  background: #fafafa;\n  color: #222;\n}\n\nh1 {\n  color: #2563eb;\n  border-bottom: 2px solid #2563eb;\n}\n\n/* se enlaza desde el HTML: */\n/* <link rel="stylesheet" href="estilo.css"> */',
       tip: "La mejor práctica es separar CSS en un archivo .css aparte. Así lo reutilizás en varias páginas y el HTML queda limpio.",
     },
@@ -72,7 +72,7 @@ export const primerSitioWeb: Course = {
       difficulty: 'intermedio',
       category: 'web',
       readTime: 5,
-      example:
+      kind: 'playground-html',      example:
         '/* Card horizontal con Flexbox */\n.card {\n  display: flex;\n  gap: 1rem;\n  align-items: center;\n  padding: 1rem;\n  border: 1px solid #ddd;\n  border-radius: 8px;\n}\n\n.card img {\n  width: 80px;\n  height: 80px;\n  border-radius: 50%;\n  object-fit: cover;\n}\n\n.card h3 { margin: 0; }\n.card p { margin: 0; color: #666; }',
       tip: "Para layouts 2D (filas Y columnas) usas CSS Grid. Pero para la mayoría de UI (navbars, cards, listas) Flexbox es suficiente y más simple.",
     },
@@ -85,7 +85,7 @@ export const primerSitioWeb: Course = {
       difficulty: 'intermedio',
       category: 'web',
       readTime: 5,
-      example:
+      kind: 'playground-html',      example:
         '<!-- Al final del body -->\n<script>\n  // Cambiar el texto al hacer click\n  const boton = document.querySelector("#mi-boton")\n  const salida = document.querySelector("#salida")\n\n  boton.addEventListener("click", () => {\n    salida.textContent = "Hola desde JS! Son las " + new Date().toLocaleTimeString()\n  })\n</script>\n\n<button id="mi-boton">Decir hola</button>\n<p id="salida"></p>',
       tip: "Poner el <script> al final del body hace que la página cargue visualmente más rápido. El HTML se muestra antes de que JS se ejecute.",
     },
@@ -98,7 +98,7 @@ export const primerSitioWeb: Course = {
       difficulty: 'intermedio',
       category: 'deploy',
       readTime: 6,
-      example:
+      kind: 'playground-html',      example:
         '# 1. Crea repo en github.com/dev-dmpp/mi-sitio\n# 2. Subir el código\n$ git init\n$ git add .\n$ git commit -m "primer sitio"\n$ git remote add origin https://github.com/dev-dmpp/mi-sitio.git\n$ git push -u origin main\n\n# 3. En GitHub: Settings → Pages → Source: main\n# 4. Listo: tu sitio está en https://dev-dmpp.github.io/mi-sitio',
       tip: "El repo DEBE ser público para GitHub Pages gratuito. Si quieres dominio propio, compras uno y en Settings → Pages lo conectas.",
     },
@@ -111,7 +111,7 @@ export const primerSitioWeb: Course = {
       difficulty: 'intermedio',
       category: 'deploy',
       readTime: 5,
-      example:
+      kind: 'playground-html',      example:
         '# 1. Crea cuenta en pages.cloudflare.com\n# 2. Conectar tu repo de GitHub\n# 3. Configura:\n#    - Build command: (vacío para sitios estáticos)\n#    - Build output: ./  (o /dist, /public)\n#    - Root: /\n# 4. Click "Deploy"\n#\n# Tu sitio queda en: https://mi-sitio.pages.dev',
       tip: "Cloudflare Pages tiene HTTPS automático y dominios custom gratis. Para sitios serios es mejor que GitHub Pages por velocidad.",
     },
@@ -124,7 +124,7 @@ export const primerSitioWeb: Course = {
       difficulty: 'intermedio',
       category: 'deploy',
       readTime: 5,
-      example:
+      kind: 'playground-html',      example:
         '# En el registrador del dominio:\n# Tipo: CNAME\n# Nombre: www\n# Valor: dev-dmpp.github.io\n#\n# Tipo: A\n# Nombre: @\n# Valor: 185.199.108.153\n#\n# Esperas unos minutos y https://mi-sitio.com funciona.',
       tip: "Cloudflare Registrar cobra al costo (sin markup). Namecheap y Porkbun son buenas alternativas. Evitá GoDaddy — sus precios de renovación son altos.",
     },
@@ -137,7 +137,7 @@ export const primerSitioWeb: Course = {
       difficulty: 'avanzado',
       category: 'web',
       readTime: 5,
-      example:
+      kind: 'playground-html',      example:
         '<head>\n  <title>Mi nombre — Desarrollador en Ciudad</title>\n  <meta name="description" content="Portfolio de Polar, desarrollador de software especializado en Linux y cloud.">\n  <meta property="og:title" content="Mi nombre — Desarrollador">\n  <meta property="og:image" content="https://mi-sitio.com/preview.jpg">\n  <link rel="canonical" href="https://mi-sitio.com/">\n</head>',
       tip: "Para verificar tu SEO: Google Search Console (gratis, te dice si Google indexó tu sitio). Para medir velocidad: PageSpeed Insights (también de Google).",
     },

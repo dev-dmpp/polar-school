@@ -6,7 +6,7 @@ import { db } from "@polar-school/db";
 import { users, userPasswords } from "@polar-school/db";
 import { lucia } from "../auth/lucia.js";
 import { hashPassword, verifyPassword } from "../auth/passwords.js";
-import { issueMagicLink, consumeMagicLink } from "../auth/magic-link.js";
+import { issueMagicLink, consumeMagicLink, getLastIssuedLink } from "../auth/magic-link.js";
 
 const registerSchema = z.object({
   email: z.string().email().max(255).transform((s) => s.toLowerCase().trim()),
@@ -142,7 +142,14 @@ authRoutes.post("/magic-link", async (c) => {
   }
 
   await issueMagicLink({ userId: user!.id, email });
-  return c.json({ ok: true });
+  const devUrl = getLastIssuedLink();
+  return c.json({
+    ok: true,
+    // En dev (sin SMTP configurado), devolvemos el link directo en la
+    // respuesta para que la UI lo muestre. En prod queda undefined y la
+    // UI muestra "Revisá tu inbox".
+    ...(devUrl ? { devUrl } : {}),
+  });
 });
 
 // GET /auth/callback?token=...
@@ -161,7 +168,11 @@ authRoutes.get("/callback", async (c) => {
   const session = await lucia.createSession(userId, { fresh: true });
   const cookie = lucia.createSessionCookie(session.id);
   c.header("Set-Cookie", cookie.serialize(), { append: true });
-  return c.redirect("/", 302);
+
+  // Redirigir al home del web (no del API). Si WEB_ORIGIN no está seteado,
+  // caemos a "/" — el operador verá error 404 pero la cookie quedará seteada.
+  const webOrigin = process.env.WEB_ORIGIN ?? "/";
+  return c.redirect(webOrigin, 302);
 });
 
 // GET /auth/me

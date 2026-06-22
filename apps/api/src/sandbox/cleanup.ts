@@ -1,6 +1,7 @@
-import { destroyContainer, listManagedContainers } from "./manager.js";
+import { ANON_OWNER_PREFIX, destroyContainer, listManagedContainers } from "./manager.js";
 import {
   IDLE_TIMEOUT_MIN,
+  ANON_IDLE_TIMEOUT_MIN,
   CLEANUP_INTERVAL_MIN,
   ORPHAN_TIMEOUT_MIN,
   MAX_TOTAL,
@@ -54,12 +55,14 @@ export async function runCleanupTick(): Promise<{
     for (const c of all) {
       const ageMs = now - c.createdAt;
       const idleMs = now - c.lastActivityAt;
+      const isAnon = c.userId.startsWith(ANON_OWNER_PREFIX);
+      const idleTimeoutMs = (isAnon ? ANON_IDLE_TIMEOUT_MIN : IDLE_TIMEOUT_MIN) * 60 * 1000;
 
       // Idle timeout
-      if (idleMs > IDLE_TIMEOUT_MIN * 60 * 1000) {
+      if (idleMs > idleTimeoutMs) {
         toDestroy.push({
           containerId: c.containerId,
-          reason: `idle-${Math.round(idleMs / 1000)}s`,
+          reason: `idle-${Math.round(idleMs / 1000)}s${isAnon ? "-anon" : ""}`,
           ageMs,
         });
         continue;
@@ -139,7 +142,7 @@ export function startCleanupLoop(): void {
 
   const intervalMs = CLEANUP_INTERVAL_MIN * 60 * 1000;
   console.log(
-    `[sandbox-cleanup] loop arrancado (cada ${CLEANUP_INTERVAL_MIN} min, idle=${IDLE_TIMEOUT_MIN} min, orphan=${ORPHAN_TIMEOUT_MIN} min, max=${MAX_TOTAL})`,
+    `[sandbox-cleanup] loop arrancado (cada ${CLEANUP_INTERVAL_MIN} min, idle=${IDLE_TIMEOUT_MIN} min, anon-idle=${ANON_IDLE_TIMEOUT_MIN} min, orphan=${ORPHAN_TIMEOUT_MIN} min, max=${MAX_TOTAL})`,
   );
 
   // Primer tick después de 30s (para no competir con el arranque)

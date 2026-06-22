@@ -20,7 +20,7 @@ export const gitGithub: Course = {
       difficulty: 'intermedio',
       category: 'git',
       readTime: 4,
-      example:
+      kind: 'playground-git',      example:
         '$ cd mi-proyecto\n$ git init\nInicializado repositorio Git vacío en /home/polar/mi-proyecto/.git/',
       tip: 'El comando no muestra nada después de la línea inicial: si no hay error, todo salió bien. El subdirectorio .git es donde Git guarda toda la historia.',
     },
@@ -33,7 +33,7 @@ export const gitGithub: Course = {
       difficulty: 'intermedio',
       category: 'git',
       readTime: 5,
-      example:
+      kind: 'playground-git',      example:
         '$ git add README.md\n$ git add .\n$ git add src/\n\n[archivos preparados para el próximo commit]',
       tip: "git add . agrega todos los archivos modificados. En proyectos grandes prefieres git add archivo por archivo para no subir cosas que no quieres.",
     },
@@ -46,7 +46,7 @@ export const gitGithub: Course = {
       difficulty: 'intermedio',
       category: 'git',
       readTime: 5,
-      example:
+      kind: 'playground-git',      example:
         '$ git commit -m "agrego el README inicial"\n[main a4a9qbn] agrego el README inicial\n 1 archivo cambiado, 8 inserciones(+)\n Autor: polar <polar@polar.school>',
       tip: 'El mensaje en -m debería ser claro y empezar con verbo en presente: "agrego", "corrijo", "refactorizo". Para mensajes largos usas git commit sin -m y se abre el editor.',
     },
@@ -59,7 +59,7 @@ export const gitGithub: Course = {
       difficulty: 'intermedio',
       category: 'git',
       readTime: 4,
-      example:
+      kind: 'playground-git',      example:
         '$ git status\nEn la rama main\nTu rama está actualizada con \'origin/main\'.\n\nnada para hacer commit, el árbol de trabajo está limpio',
       tip: 'Es el comando que más vas a usar en el día a día. Conviene memorizar la salida: archivos en rojo no están en staging, en verde sí.',
     },
@@ -72,7 +72,7 @@ export const gitGithub: Course = {
       difficulty: 'intermedio',
       category: 'git',
       readTime: 4,
-      example:
+      kind: 'playground-git',      example:
         '$ git log\ncommit a4a9qbn (HEAD -> main)\nAuthor: polar <polar@polar.school>\nDate:   Mon Jun 19 10:30:00 2026\n\n    agrego el README inicial\n\ncommit 9f3c2a1\nAuthor: polar <polar@polar.school>\nDate:   Mon Jun 19 09:15:00 2026\n\n    primer commit',
       tip: 'git log --oneline muestra solo el hash corto y el mensaje, una línea por commit. Útil cuando la historia es larga.',
     },
@@ -85,7 +85,7 @@ export const gitGithub: Course = {
       difficulty: 'intermedio',
       category: 'git',
       readTime: 5,
-      example:
+      kind: 'playground-git',      example:
         '$ git branch\n* main\n  feature-login\n  hotfix-bug-404\n\n$ git branch nueva-feature\n$ git checkout -b experimento\nCambiaste a una nueva rama \'experimento\'',
       tip: 'El asterisco (*) marca la rama donde estás parado. La convención moderna es usar main como rama principal (antes se llamaba master).',
     },
@@ -98,7 +98,7 @@ export const gitGithub: Course = {
       difficulty: 'intermedio',
       category: 'git',
       readTime: 5,
-      example:
+      kind: 'playground-git',      example:
         '$ git checkout main\n$ git merge feature-login\nMerge made by the \'ort\' strategy.\n src/auth.ts | 45 +++++++++++++++++++++++++++++++++++++++++++++\n 1 archivo cambiado, 45 inserciones(+)',
       tip: 'Si Git no puede fusionar automáticamente (conflicto) te lo avisa y te deja editar los archivos marcados. Después corres git add y git commit para terminar.',
     },
@@ -111,7 +111,7 @@ export const gitGithub: Course = {
       difficulty: 'intermedio',
       category: 'git',
       readTime: 5,
-      example:
+      kind: 'playground-git',      example:
         '$ git remote add origin https://github.com/dev-dmpp/mi-proyecto.git\n$ git remote -v\norigin\thttps://github.com/dev-dmpp/mi-proyecto.git (fetch)\norigin\thttps://github.com/dev-dmpp/mi-proyecto.git (push)',
       tip: 'origin es solo el nombre por defecto que se le da al remote principal. Puedes tener varios (origin, upstream, backup) para apuntar a distintas copias.',
     },
@@ -124,7 +124,7 @@ export const gitGithub: Course = {
       difficulty: 'intermedio',
       category: 'git',
       readTime: 5,
-      example:
+      kind: 'playground-git',      example:
         '$ git push -u origin main\nObjeto commits: 3, hecho.\nDelta compression using up to 4 threads.\nTotal 3 (delta 0), reused 0 (delta 0), pack-reused 0\nTo https://github.com/dev-dmpp/mi-proyecto.git\n   abc1234..a4a9qbn  main -> main',
       tip: "El -u se usa solo la primera vez: deja configurada la rama upstream. Después con git push alcanza.",
     },
@@ -137,7 +137,7 @@ export const gitGithub: Course = {
       difficulty: 'avanzado',
       category: 'git',
       readTime: 6,
-      example:
+      kind: 'playground-git',      example:
         '# 1. Crea rama y pushear\n$ git checkout -b feature-login\n$ git push -u origin feature-login\n\n# 2. Ir a GitHub, click "Compare & pull request"\n# 3. Llenar título y descripción\n# 4. Espera review y mergear',
       tip: "En proyectos open source el flujo es: fork del repo, trabajar en tu fork, abrir PR contra el repo original. En equipos con acceso directo, trabajas directo en el repo principal.",
     },

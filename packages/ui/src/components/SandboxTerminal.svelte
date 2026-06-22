@@ -86,29 +86,31 @@
     return `${wsProto}//${u.host}${path}`
   }
 
+  /**
+   * POST /sandbox/start (logueado) o /sandbox/anonymous-start (anónimo).
+   *
+   * Estrategia: intentar primero el endpoint logueado. Si da 401, caer al
+   * endpoint anónimo. Eso evita una llamada extra a /auth/me antes del start.
+   */
   async function postStart(): Promise<{
     ok: boolean
     sessionToken: string
     wsPath: string
     reused: boolean
+    isAnonymous: boolean
+    anonId?: string
   }> {
     const base = resolveApiBase()
-    const url = `${base}/sandbox/start`
-    let res: Response
-    try {
-      res = await fetch(url, {
-        method: 'POST',
-        credentials: 'include',
-      })
-    } catch (err) {
-      // Network-level failure (DNS, CORS preflight, mixed-content, refused)
-      console.error('[sandbox] POST', url, 'network error:', err)
-      throw new Error(`NETWORK: ${(err as Error).message ?? 'fallo de red'}`)
-    }
 
-    if (res.status === 401) {
-      console.info('[sandbox] sin sesión activa (401) — esperando login')
-      throw new Error('NO_SESSION')
+    // Intento 1: endpoint logueado
+    let res = await tryFetch(`${base}/sandbox/start`, base)
+    if (res && res.status === 401) {
+      // Sin sesión → caer al endpoint anónimo
+      console.info('[sandbox] sin sesión (401) → probando anonymous-start')
+      res = await tryFetch(`${base}/sandbox/anonymous-start`, base)
+    }
+    if (!res) {
+      throw new Error('NETWORK: fallo de red')
     }
     if (res.status === 429) {
       const body = await res.json().catch(() => ({}))
@@ -117,10 +119,47 @@
     }
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
-      console.error('[sandbox] POST', url, 'status', res.status, 'body', body)
+      console.error('[sandbox] POST start status', res.status, 'body', body)
       throw new Error(`START_FAILED: ${body.error ?? res.statusText}`)
     }
     return res.json()
+  }
+
+  async function tryFetch(url: string, base: string): Promise<Response | null> {
+    try {
+      return await fetch(url, { method: 'POST', credentials: 'include' })
+    } catch (err) {
+      console.error('[sandbox] POST', url, 'network error:', err)
+      return null
+    }
+  }
+
+  /**
+   * POST /sandbox/claim (sólo logueado).
+   * Si el usuario tiene un container anónimo de la misma IP, lo transfiere.
+   * Idempotente: si no hay nada que reclamar, devuelve claimed:false.
+   */
+  async function tryClaim(): Promise<boolean> {
+    const base = resolveApiBase()
+    try {
+      const res = await fetch(`${base}/sandbox/claim`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (!res.ok) {
+        console.warn('[sandbox] claim status', res.status)
+        return false
+      }
+      const j = await res.json()
+      if (j.claimed) {
+        console.info('[sandbox] container anónimo reclamado:', j.containerId)
+        return true
+      }
+      return false
+    } catch (err) {
+      console.warn('[sandbox] claim network error:', err)
+      return false
+    }
   }
 
   function connectWs(sessionToken: string, wsPath: string): Promise<void> {
@@ -296,19 +335,13 @@
       await setupTerminal()
       const start = await postStart()
       await connectWs(start.sessionToken, start.wsPath)
+      // Si arrancó como anónimo, intentar reclamar cuando aparezca sesión.
+      if (start.isAnonymous) {
+        startAnonymousClaimWatcher()
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       console.warn('[sandbox] bootstrap falló:', msg)
-
-      if (msg === 'NO_SESSION') {
-        status = 'fallback'
-        statusMessage = 'Inicia sesión arriba para usar el sandbox real'
-        term?.writeln('\x1b[33m⚠ No hay sesión activa. Inicia sesión arriba a la derecha para usar el sandbox real.\x1b[0m')
-        term?.writeln('\x1b[90m  Esta terminal esperará automáticamente cuando inicies sesión.\x1b[0m')
-        startLoginWatcher()
-        onFallback?.()
-        return
-      }
 
       if (msg.startsWith('NETWORK')) {
         status = 'error'
@@ -319,63 +352,57 @@
         return
       }
 
+      if (msg.startsWith('TOO_MANY') || msg.startsWith('START_FAILED')) {
+        status = 'error'
+        statusMessage = msg.replace(/^[A-Z_]+: /, '')
+        term?.writeln(`\x1b[31m✗ ${statusMessage}\x1b[0m`)
+        onFallback?.()
+        return
+      }
+
       status = 'error'
       statusMessage = `Error: ${msg}`
       term?.writeln(`\x1b[31m✗ No pude conectar al sandbox: ${msg}\x1b[0m`)
-      term?.writeln('\x1b[90m  Verifica que el backend esté corriendo y que tengas sesión activa.\x1b[0m')
+      term?.writeln('\x1b[90m  Verifica que el backend esté corriendo.\x1b[0m')
       onFallback?.()
     }
   }
 
   /**
-   * Watcher liviano: detecta cuando el usuario inicia sesión (aparece cookie de sesión)
-   * y reintenta el bootstrap automáticamente. Corre a 1Hz y se autodestruye al primer
-   * éxito (o cuando el componente se desmonta).
-   *
-   * Detección: el backend expone GET /auth/me que devuelve 200 + {user: {...}} si hay
-   * sesión, 200 + {user: null} si no. Más confiable que inspeccionar document.cookie
-   * (que no ve cookies HttpOnly).
+   * Si arrancamos como anónimos, polling liviano a /auth/me. Cuando aparece
+   * sesión, intenta reclamar el container para que el usuario no pierda lo
+   * que escribió. Termina al primer éxito.
    */
-  let loginWatcher: ReturnType<typeof setInterval> | null = null
-  function startLoginWatcher() {
-    if (loginWatcher || destroyed) return
-    console.info('[sandbox] iniciando watcher de login (1Hz)')
-    loginWatcher = setInterval(async () => {
+  let claimWatcher: ReturnType<typeof setInterval> | null = null
+  function startAnonymousClaimWatcher() {
+    if (claimWatcher || destroyed) return
+    console.info('[sandbox] watcher de claim anónimo (1Hz)')
+    claimWatcher = setInterval(async () => {
       if (destroyed) {
-        if (loginWatcher) clearInterval(loginWatcher)
-        loginWatcher = null
+        if (claimWatcher) clearInterval(claimWatcher)
+        claimWatcher = null
         return
       }
       const base = resolveApiBase()
       try {
-        const r = await fetch(`${base}/auth/me`, {
+        const meRes = await fetch(`${base}/auth/me`, {
           method: 'GET',
           credentials: 'include',
         })
-        if (r.ok) {
-          // /auth/me devuelve 200 + {user: null} si no hay sesión,
-          // o 200 + {user: {...}} si hay sesión. Sólo nos importa el segundo caso.
-          const body = await r.json().catch(() => ({}))
-          if (body && body.user) {
-            console.info('[sandbox] sesión detectada — reintentando bootstrap')
-            if (loginWatcher) {
-              clearInterval(loginWatcher)
-              loginWatcher = null
-            }
-            // Resetear estado y reintentar
-            status = 'connecting'
-            statusMessage = 'Conectando al sandbox…'
-            // Limpiar contenido anterior del terminal
-            try {
-              term?.clear()
-            } catch {
-              /* ignore */
-            }
-            await bootstrap()
-          }
+        if (!meRes.ok) return
+        const me = await meRes.json().catch(() => ({}))
+        if (!me?.user) return
+
+        // Hay sesión → intentar reclamar
+        const claimed = await tryClaim()
+        if (claimed && claimWatcher) {
+          clearInterval(claimWatcher)
+          claimWatcher = null
+          statusMessage = 'Sesión detectada — sandbox transferido a tu cuenta'
+          term?.writeln('\x1b[36mℹ Sesión detectada: tu sandbox ahora está asociado a tu cuenta.\x1b[0m')
         }
       } catch {
-        // Silencioso: seguimos esperando
+        // seguir intentando
       }
     }, 1000)
   }
@@ -387,7 +414,7 @@
   onDestroy(() => {
     destroyed = true
     if (reconnectTimer) clearTimeout(reconnectTimer)
-    if (loginWatcher) clearInterval(loginWatcher)
+    if (claimWatcher) clearInterval(claimWatcher)
     if (resizeObserver) resizeObserver.disconnect()
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.close(1000, 'component-unmounted')

@@ -8,11 +8,17 @@ import {
   TMPFS_SIZE_MB,
   MAX_PER_USER,
   MAX_TOTAL,
+  MAX_ANON_TOTAL,
   NOBODY_UID,
   NOBODY_GID,
   LABEL_MANAGED_BY,
   LABEL_MANAGED_BY_VALUE,
 } from "./limits.js";
+
+/** Prefijo de ownerId para contenedores anónimos. Cuando un contenedor se crea
+ *  con ownerId="anon:xxxxx", el manager lo trata como anónimo: aplica
+ *  MAX_ANON_TOTAL en vez de MAX_PER_USER y lo marca como anonymous en labels. */
+export const ANON_OWNER_PREFIX = "anon:";
 
 /**
  * Wrapper sobre dockerode para gestionar contenedores sandbox por usuario.
@@ -62,9 +68,14 @@ function generateContainerName(userId: string): string {
  * Si ya hay uno activo para ese usuario, lo mata y crea uno nuevo
  * (recuperación de estado corrupto).
  *
+ * Si el ownerId tiene prefijo `anon:` (anónimo), aplica MAX_ANON_TOTAL
+ * en vez de MAX_PER_USER y no requiere sesión de usuario.
+ *
  * Returns: ContainerInfo o error si se alcanzó el límite global.
  */
-export async function createContainer(userId: string): Promise<ContainerInfo> {
+export async function createContainer(ownerId: string): Promise<ContainerInfo> {
+  const isAnon = ownerId.startsWith(ANON_OWNER_PREFIX);
+
   // Contar contenedores totales activos del sandbox
   const allActive = await listManagedContainers();
   if (allActive.length >= MAX_TOTAL) {
@@ -74,25 +85,37 @@ export async function createContainer(userId: string): Promise<ContainerInfo> {
     );
   }
 
-  // Contar contenedores del usuario (incluyendo huérfanos en Docker)
-  const userActive = allActive.filter((c) => c.userId === userId);
-  if (userActive.length >= MAX_PER_USER) {
-    throw new SandboxError(
-      "TOO_MANY_PER_USER",
-      `Ya tienes ${MAX_PER_USER} contenedores activos. Cierra alguno antes de abrir otro.`,
-    );
+  // Si es anónimo, contar cuántos anónimos hay y aplicar MAX_ANON_TOTAL
+  if (isAnon) {
+    const anonActive = allActive.filter((c) => c.userId.startsWith(ANON_OWNER_PREFIX));
+    if (anonActive.length >= MAX_ANON_TOTAL) {
+      throw new SandboxError(
+        "ANON_FULL",
+        `Límite de sesiones anónimas alcanzado (${MAX_ANON_TOTAL}). Crea una cuenta gratuita para una experiencia más estable.`,
+      );
+    }
+  } else {
+    // Contar contenedores del usuario (incluyendo huérfanos en Docker)
+    const userActive = allActive.filter((c) => c.userId === ownerId);
+    if (userActive.length >= MAX_PER_USER) {
+      throw new SandboxError(
+        "TOO_MANY_PER_USER",
+        `Ya tienes ${MAX_PER_USER} contenedores activos. Cierra alguno antes de abrir otro.`,
+      );
+    }
   }
 
-  // Matar contenedores viejos del usuario (si quedaron por bug)
-  for (const old of userActive) {
+  // Matar contenedores viejos del owner (si quedaron por bug)
+  const ownerActive = allActive.filter((c) => c.userId === ownerId);
+  for (const old of ownerActive) {
     await destroyContainer(old.containerId).catch(() => {
       // Si falla, lo registramos pero seguimos
       console.warn(`[sandbox] No pude limpiar container viejo ${old.containerId}`);
     });
   }
-  activeByUser.delete(userId);
+  activeByUser.delete(ownerId);
 
-  const containerName = generateContainerName(userId);
+  const containerName = generateContainerName(ownerId);
   const now = Date.now();
 
   // Crear contenedor (NO lo inicia todavía, eso lo hace el WS bridge)
@@ -102,12 +125,14 @@ export async function createContainer(userId: string): Promise<ContainerInfo> {
     User: `${NOBODY_UID}:${NOBODY_GID}`,
     WorkingDir: "/tmp",
     Env: [
-      `PS_USER_ID=${userId}`,
+      `PS_OWNER_ID=${ownerId}`,
+      `PS_IS_ANON=${isAnon ? "1" : "0"}`,
       `PS_CREATED_AT=${new Date(now).toISOString()}`,
     ],
     Labels: {
       [LABEL_MANAGED_BY]: LABEL_MANAGED_BY_VALUE,
-      "polar-school-user": userId,
+      "polar-school-user": ownerId,
+      "polar-school-anon": isAnon ? "1" : "0",
     },
     HostConfig: {
       // Recursos
@@ -139,14 +164,54 @@ export async function createContainer(userId: string): Promise<ContainerInfo> {
 
   const info: ContainerInfo = {
     containerId: container.id,
-    userId,
+    userId: ownerId,
     createdAt: now,
     lastActivityAt: now,
   };
 
-  activeByUser.set(userId, info);
+  activeByUser.set(ownerId, info);
 
   return info;
+}
+
+/**
+ * Reclama un contenedor anónimo para un usuario real.
+ * Cambia el owner en el mapa y actualiza los labels del container en Docker.
+ *
+ * NO mata el container: mantiene la sesión viva. El usuario sigue donde estaba.
+ */
+export async function claimAnonymousContainer(
+  anonId: string,
+  userId: string,
+): Promise<ContainerInfo | null> {
+  const anonOwnerId = ANON_OWNER_PREFIX + anonId;
+  const info = activeByUser.get(anonOwnerId);
+  if (!info) return null;
+
+  // Matar containers viejos del user real (si los tenía)
+  const userActive = await listManagedContainers();
+  const oldForUser = userActive.filter((c) => c.userId === userId);
+  for (const old of oldForUser) {
+    await destroyContainer(old.containerId).catch(() => {});
+  }
+  activeByUser.delete(userId);
+
+  // Transferir: nuevo ownerId, mismas referencias
+  const newInfo: ContainerInfo = {
+    ...info,
+    userId,
+    lastActivityAt: Date.now(),
+  };
+  activeByUser.delete(anonOwnerId);
+  activeByUser.set(userId, newInfo);
+
+  // Actualizar labels en Docker (best-effort: si falla, el container sigue funcionando)
+  // NOTA: Docker no permite modificar labels de un container existente.
+  // El label polar-school-user queda stale hasta que el container muera;
+  // no es crítico porque listManagedContainers cruza con activeByUser,
+  // que es la fuente de verdad.
+
+  return newInfo;
 }
 
 /** Inicia el contenedor (lo arranca, pero todavía no hay stream). */
@@ -227,7 +292,7 @@ export async function listManagedContainers(): Promise<ContainerInfo[]> {
 /** Error tipado del sandbox. */
 export class SandboxError extends Error {
   constructor(
-    public code: "FULL" | "TOO_MANY_PER_USER" | "NOT_FOUND" | "DOCKER_UNAVAILABLE",
+    public code: "FULL" | "TOO_MANY_PER_USER" | "NOT_FOUND" | "DOCKER_UNAVAILABLE" | "ANON_FULL" | "ANON_NOT_FOUND",
     message: string,
   ) {
     super(message);
