@@ -27,6 +27,7 @@
     clearDraft,
     formatSavedAgo,
   } from '../lib/playground-storage'
+  import { EditorHistory } from '../lib/editor-history'
   import CodeEditor from './CodeEditor.svelte'
 
   interface Props {
@@ -124,6 +125,37 @@ boton?.addEventListener('click', () => {
   let savedFlashTimer: ReturnType<typeof setTimeout> | null = null
   let savedLabelTimer: ReturnType<typeof setInterval> | null = null
 
+  // Editor refs (B6) para llamar undo/redo desde los botones del header
+  let htmlEditor: { undo: () => void; redo: () => void } | null = $state(null)
+  let cssEditor: { undo: () => void; redo: () => void } | null = $state(null)
+  let jsEditor: { undo: () => void; redo: () => void } | null = $state(null)
+
+  // History stacks (B6): uno por panel
+  const htmlHistory = new EditorHistory(50)
+  const cssHistory = new EditorHistory(50)
+  const jsHistory = new EditorHistory(50)
+
+  // Estado de botones (B6) — drives los disabled
+  let htmlCanUndo = $state(false)
+  let htmlCanRedo = $state(false)
+  let cssCanUndo = $state(false)
+  let cssCanRedo = $state(false)
+  let jsCanUndo = $state(false)
+  let jsCanRedo = $state(false)
+
+  function handleHtmlHistoryChange(canUndo: boolean, canRedo: boolean) {
+    htmlCanUndo = canUndo
+    htmlCanRedo = canRedo
+  }
+  function handleCssHistoryChange(canUndo: boolean, canRedo: boolean) {
+    cssCanUndo = canUndo
+    cssCanRedo = canRedo
+  }
+  function handleJsHistoryChange(canUndo: boolean, canRedo: boolean) {
+    jsCanUndo = canUndo
+    jsCanRedo = canRedo
+  }
+
   function scheduleRender() {
     if (renderTimer) clearTimeout(renderTimer)
     renderTimer = setTimeout(render, 300)
@@ -165,7 +197,7 @@ boton?.addEventListener('click', () => {
     }
   }
 
-  // Reset a defaults + limpia storage
+  // Reset a defaults + limpia storage + limpia histories (B6)
   function reset() {
     const hasChanges =
       html !== initialHtml || css !== initialCss || js !== initialJs
@@ -183,6 +215,16 @@ boton?.addEventListener('click', () => {
     savedLabel = ''
     showSavedFlash = false
     saveError = null
+    // B6: limpiar histories
+    htmlHistory.clear()
+    cssHistory.clear()
+    jsHistory.clear()
+    htmlCanUndo = false
+    htmlCanRedo = false
+    cssCanUndo = false
+    cssCanRedo = false
+    jsCanUndo = false
+    jsCanRedo = false
     render()
   }
 
@@ -213,6 +255,46 @@ boton?.addEventListener('click', () => {
       window.addEventListener('message', handleMessage)
       return () => window.removeEventListener('message', handleMessage)
     }
+  })
+
+  // Effect (B6): listener global de teclado para undo/redo.
+  // Solo actua si el focus esta dentro del playground.
+  $effect(() => {
+    if (typeof window === 'undefined') return
+    function handleKeydown(ev: KeyboardEvent) {
+      const mod = ev.metaKey || ev.ctrlKey
+      if (!mod) return
+      const key = ev.key.toLowerCase()
+      const isUndo = key === 'z' && !ev.shiftKey
+      const isRedo =
+        (key === 'z' && ev.shiftKey) || (key === 'y' && !ev.shiftKey)
+      if (!isUndo && !isRedo) return
+
+      // Detectar si el target esta dentro del playground
+      const target = ev.target as HTMLElement | null
+      if (!target || !target.closest('.html-playground')) return
+
+      // Determinar que panel segun el data-panel del <pre> o textarea ancestro
+      const inHtml = !!target.closest('[data-panel="html"]')
+      const inCss = !!target.closest('[data-panel="css"]')
+      const inJs = !!target.closest('[data-panel="js"]')
+
+      ev.preventDefault()
+      if (inHtml) {
+        if (isUndo) htmlEditor?.undo()
+        else htmlEditor?.redo()
+      } else if (inCss) {
+        if (isUndo) cssEditor?.undo()
+        else cssEditor?.redo()
+      } else if (inJs) {
+        if (isUndo) jsEditor?.undo()
+        else jsEditor?.redo()
+      }
+      // Si el focus esta en el playground pero no en un editor
+      // (ej. en el boton Reset), no hace nada y deja pasar al browser.
+    }
+    window.addEventListener('keydown', handleKeydown)
+    return () => window.removeEventListener('keydown', handleKeydown)
   })
 
   // Effect: render cuando cambian html/css/js o se monta el iframe
@@ -284,45 +366,96 @@ boton?.addEventListener('click', () => {
     <div class="pane">
       <div class="pane-header">
         <span class="label">HTML</span>
-        <button class="copy-btn" onclick={() => copy('html')}>
-          {copyState === 'html' ? '✓ Copiado' : 'Copiar'}
-        </button>
+        <div class="pane-actions">
+          <button
+            class="undo-btn"
+            disabled={!htmlCanUndo}
+            onclick={() => htmlEditor?.undo()}
+            title="Deshacer (Ctrl/Cmd+Z)"
+          >↶</button>
+          <button
+            class="undo-btn"
+            disabled={!htmlCanRedo}
+            onclick={() => htmlEditor?.redo()}
+            title="Rehacer (Ctrl/Cmd+Shift+Z)"
+          >↷</button>
+          <button class="copy-btn" onclick={() => copy('html')}>
+            {copyState === 'html' ? '✓ Copiado' : 'Copiar'}
+          </button>
+        </div>
       </div>
       <CodeEditor
+        bind:this={htmlEditor}
         bind:value={html}
         language="html"
         ariaLabel="Editor HTML"
         panel="html"
+        history={htmlHistory}
+        onHistoryChange={handleHtmlHistoryChange}
       />
     </div>
 
     <div class="pane">
       <div class="pane-header">
         <span class="label">CSS</span>
-        <button class="copy-btn" onclick={() => copy('css')}>
-          {copyState === 'css' ? '✓ Copiado' : 'Copiar'}
-        </button>
+        <div class="pane-actions">
+          <button
+            class="undo-btn"
+            disabled={!cssCanUndo}
+            onclick={() => cssEditor?.undo()}
+            title="Deshacer (Ctrl/Cmd+Z)"
+          >↶</button>
+          <button
+            class="undo-btn"
+            disabled={!cssCanRedo}
+            onclick={() => cssEditor?.redo()}
+            title="Rehacer (Ctrl/Cmd+Shift+Z)"
+          >↷</button>
+          <button class="copy-btn" onclick={() => copy('css')}>
+            {copyState === 'css' ? '✓ Copiado' : 'Copiar'}
+          </button>
+        </div>
       </div>
       <CodeEditor
+        bind:this={cssEditor}
         bind:value={css}
         language="css"
         ariaLabel="Editor CSS"
         panel="css"
+        history={cssHistory}
+        onHistoryChange={handleCssHistoryChange}
       />
     </div>
 
     <div class="pane">
       <div class="pane-header">
         <span class="label">JS</span>
-        <button class="copy-btn" onclick={() => copy('js')}>
-          {copyState === 'js' ? '✓ Copiado' : 'Copiar'}
-        </button>
+        <div class="pane-actions">
+          <button
+            class="undo-btn"
+            disabled={!jsCanUndo}
+            onclick={() => jsEditor?.undo()}
+            title="Deshacer (Ctrl/Cmd+Z)"
+          >↶</button>
+          <button
+            class="undo-btn"
+            disabled={!jsCanRedo}
+            onclick={() => jsEditor?.redo()}
+            title="Rehacer (Ctrl/Cmd+Shift+Z)"
+          >↷</button>
+          <button class="copy-btn" onclick={() => copy('js')}>
+            {copyState === 'js' ? '✓ Copiado' : 'Copiar'}
+          </button>
+        </div>
       </div>
       <CodeEditor
+        bind:this={jsEditor}
         bind:value={js}
         language="javascript"
         ariaLabel="Editor JavaScript"
         panel="js"
+        history={jsHistory}
+        onHistoryChange={handleJsHistoryChange}
       />
     </div>
 
@@ -446,6 +579,26 @@ boton?.addEventListener('click', () => {
   .actions {
     display: flex;
     gap: 0.4rem;
+  }
+
+  .pane-actions {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+  }
+
+  .undo-btn {
+    font-size: 1rem;
+    padding: 0.1em 0.5em;
+    line-height: 1;
+    min-width: 1.8rem;
+  }
+  .undo-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  .undo-btn:disabled:hover {
+    background: transparent;
   }
 
   button {

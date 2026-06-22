@@ -1,23 +1,23 @@
 <script lang="ts">
   /**
-   * CodeEditor — textarea con syntax highlighting overlay.
+   * CodeEditor — textarea con syntax highlighting overlay + undo/redo.
    *
-   * Estrategia: el <textarea> sigue siendo el input real (typing, copy,
-   * paste, accesibilidad). Debajo, un <pre> con el mismo texto tokenizado
-   * por highlight.js. El textarea tiene color: transparent y caret-color
-   * para mantener el caret visible. El scroll se sincroniza entre ambos.
+   * Responsabilidades:
+   *   - Textarea como input real (typing, copy, paste, accesibilidad)
+   *   - <pre> debajo con el texto tokenizado por highlight.js
+   *   - Tab key inserta 2 spaces
+   *   - Scroll sincronizado entre textarea y pre
+   *   - Debounce 200ms en highlight (typing fluido)
+   *   - Push al history externo con debounce 500ms (B6)
+   *   - undo() / redo() exposed via callbacks al padre (B6)
    *
-   * Lenguajes: html | css | javascript (los 3 que usa HtmlPlayground).
-   *
-   * Rendimiento: highlight() corre con debounce 200ms (suficientemente
-   * responsivo para typing fluido).
+   * El history vive en el padre (HtmlPlayground) y se pasa como prop.
+   * Asi el padre coordina los atajos globales (Cmd+Z afecta al panel
+   * con focus) y el undo/redo entre paneles si quiere.
    *
    * Limitaciones conocidas:
-   *   - La selección del textarea NO se ve como color de fondo en el
-   *     highlight (porque el texto es transparente). Esto es aceptable
-   *     para el caso de uso de un playground educativo.
-   *   - Si el usuario pega codigo gigante (>50KB) el highlight puede
-   *     tardar ~100ms. Eso es aceptable.
+   *   - Seleccion del textarea NO se ve como color de fondo en el
+   *     highlight (texto transparente). Aceptable para playground educativo.
    */
   import { onMount, onDestroy } from 'svelte'
   import hljs from 'highlight.js/lib/core'
@@ -25,6 +25,7 @@
   import xml from 'highlight.js/lib/languages/xml'
   import css from 'highlight.js/lib/languages/css'
   import 'highlight.js/styles/github-dark.css'
+  import type { EditorHistory } from '../lib/editor-history'
 
   // Registrar solo los lenguajes que necesitamos (reduce bundle ~50KB → ~30KB)
   hljs.registerLanguage('javascript', javascript)
@@ -37,27 +38,53 @@
     language: 'html' | 'css' | 'javascript'
     ariaLabel: string
     panel?: 'html' | 'css' | 'js'
-    /** Padding y line-height deben matchear entre textarea y pre. */
+    /** History externo (B6). Si se pasa, se hace push debounced. */
+    history?: EditorHistory | null
+    /** Callback cuando el editor recibe focus. Usado por el padre para los atajos. */
+    onFocus?: () => void
+    /** Callback cuando cambia canUndo/canRedo (B6). Para habilitar/deshabilitar botones. */
+    onHistoryChange?: (canUndo: boolean, canRedo: boolean) => void
   }
 
-  let { value = $bindable(), language, ariaLabel, panel }: Props = $props()
+  let {
+    value = $bindable(),
+    language,
+    ariaLabel,
+    panel,
+    history = null,
+    onFocus,
+    onHistoryChange,
+  }: Props = $props()
 
   // Tokenized output para el <pre>
   let highlighted = $state('')
   let highlightTimer: ReturnType<typeof setTimeout> | null = null
+  let historyTimer: ReturnType<typeof setTimeout> | null = null
 
   // Refs para sincronizar scroll
   let textareaEl: HTMLTextAreaElement | null = $state(null)
   let preEl: HTMLPreElement | null = $state(null)
 
+  // Estado de undo/redo expuesto al padre (B6)
+  let canUndoState = $state(false)
+  let canRedoState = $state(false)
+
+  function updateHistoryState() {
+    if (!history) {
+      canUndoState = false
+      canRedoState = false
+    } else {
+      canUndoState = history.canUndo()
+      canRedoState = history.canRedo()
+    }
+    onHistoryChange?.(canUndoState, canRedoState)
+  }
+
   function recomputeHighlight() {
     try {
       const result = hljs.highlight(value, { language, ignoreIllegals: true })
-      // hljs devuelve HTML con <span class="hljs-...">. Anadimos un newline
-      // al final para que la ultima linea tenga la misma altura que en textarea.
       highlighted = result.value + '\n'
     } catch {
-      // Si highlight.js falla (input muy raro), fallback al texto plano escapado
       highlighted = escapeHtml(value) + '\n'
     }
   }
@@ -74,11 +101,61 @@
     highlightTimer = setTimeout(recomputeHighlight, 200)
   }
 
+  /**
+   * Push al history con debounce 500ms. Asi un typing rapido genera
+   * una sola entry, no una por letra. Tambien push en blur para
+   * capturar el estado final cuando el usuario cambia de panel.
+   */
+  function scheduleHistoryPush() {
+    if (!history) return
+    if (historyTimer) clearTimeout(historyTimer)
+    historyTimer = setTimeout(() => {
+      history!.push(value)
+      updateHistoryState()
+    }, 500)
+  }
+
+  // Push inmediato al history (sin debounce) para acciones discretas.
+  function pushHistoryNow() {
+    if (!history) return
+    if (historyTimer) clearTimeout(historyTimer)
+    history.push(value)
+    updateHistoryState()
+  }
+
+  // Metodos undo/redo (B6). El padre los invoca via callbacks cuando
+  // detecta Cmd/Ctrl+Z o Cmd/Ctrl+Shift+Z en un listener global.
+  // Tambien expone via export para los botones undo/redo del header.
+  export function undo() {
+    if (!history) return
+    const prev = history.undo()
+    updateHistoryState()
+    if (prev !== null) {
+      value = prev
+    }
+  }
+
+  export function redo() {
+    if (!history) return
+    const next = history.redo()
+    updateHistoryState()
+    if (next !== null) {
+      value = next
+    }
+  }
+
   // Resaltar cuando cambia value o language
   $effect(() => {
     void value
     void language
     scheduleHighlight()
+  })
+
+  // Push al history cuando cambia value (con debounce)
+  $effect(() => {
+    void value
+    if (!history) return
+    scheduleHistoryPush()
   })
 
   // Sincronizar scroll del pre con el textarea
@@ -88,30 +165,67 @@
     preEl.scrollLeft = textareaEl.scrollLeft
   }
 
-  // Tab key inserta 2 spaces (comun en JS/HTML/CSS)
+  // Tab key + atajos undo/redo (B6)
   function handleKeydown(ev: KeyboardEvent) {
+    // Tab inserta 2 spaces
     if (ev.key === 'Tab' && textareaEl) {
       ev.preventDefault()
       const start = textareaEl.selectionStart
       const end = textareaEl.selectionEnd
       const insert = '  '
       value = value.substring(0, start) + insert + value.substring(end)
-      // Restaurar cursor despues del insert
       queueMicrotask(() => {
         if (textareaEl) {
           textareaEl.selectionStart = textareaEl.selectionEnd = start + insert.length
         }
       })
+      pushHistoryNow() // tab es accion discreta
+      return
+    }
+
+    // Cmd/Ctrl+Z (undo) o Cmd/Ctrl+Shift+Z / Cmd/Ctrl+Y (redo)
+    const mod = ev.metaKey || ev.ctrlKey
+    if (!mod) return
+    const key = ev.key.toLowerCase()
+
+    if (key === 'z' && !ev.shiftKey) {
+      ev.preventDefault()
+      undo()
+      return
+    }
+    if ((key === 'z' && ev.shiftKey) || key === 'y') {
+      ev.preventDefault()
+      redo()
+      return
     }
   }
 
+  function handleBlur() {
+    // Flush del debounce para que el estado quede persistido en history
+    // antes de que el usuario cambie de panel o haga Cmd+Z en otro.
+    if (historyTimer) {
+      clearTimeout(historyTimer)
+      historyTimer = null
+      if (history) {
+        history.push(value)
+        updateHistoryState()
+      }
+    }
+  }
+
+  function handleFocusInternal() {
+    onFocus?.()
+  }
+
   onMount(() => {
-    // Highlight inmediato al montar (sin debounce)
     recomputeHighlight()
+    // Inicializa estado de history
+    updateHistoryState()
   })
 
   onDestroy(() => {
     if (highlightTimer) clearTimeout(highlightTimer)
+    if (historyTimer) clearTimeout(historyTimer)
   })
 </script>
 
@@ -126,6 +240,8 @@
     bind:value
     onscroll={handleScroll}
     onkeydown={handleKeydown}
+    onblur={handleBlur}
+    onfocus={handleFocusInternal}
     spellcheck="false"
     autocapitalize="off"
     autocorrect="off"
@@ -144,7 +260,6 @@
 
   .highlight-overlay,
   textarea {
-    /* Mismas propiedades tipograficas para alineamiento pixel-perfect */
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 0.85rem;
     line-height: 1.5;
@@ -156,34 +271,28 @@
     overflow-wrap: normal;
     tab-size: 2;
 
-    /* Toman todo el espacio del contenedor */
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
 
-    /* Scroll vertical en ambos */
     overflow: auto;
   }
 
   .highlight-overlay {
-    /* El pre va DEBAJO y muestra los colores */
     color: #e4e4e7;
     background: var(--pg-bg, #1e1e1e);
-    pointer-events: none; /* clicks van al textarea */
+    pointer-events: none;
     z-index: 1;
   }
 
   textarea {
-    /* El textarea va ENCIMA con texto transparente */
     color: transparent;
-    caret-color: var(--pg-fg, #e4e4e7);
+    caret-color: var(--pg-fg, #e4e4f7);
     background: transparent;
     resize: none;
     outline: none;
     z-index: 2;
-    /* Hace visible la seleccion del usuario sobre el highlight */
-    /* (webkit usa esto para el fondo de seleccion) */
   }
 
   textarea::selection {
@@ -194,7 +303,6 @@
     background: transparent;
   }
 
-  /* Tema dark de highlight.js para que combine con el playground */
   :global(.hljs) {
     background: transparent !important;
     color: #e4e4e7;
