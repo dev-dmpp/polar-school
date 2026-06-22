@@ -1,23 +1,30 @@
 <script lang="ts">
   /**
-   * CodeEditor — textarea con syntax highlighting overlay + undo/redo.
+   * CodeEditor — textarea con syntax highlighting overlay + undo/redo + line numbers.
    *
    * Responsabilidades:
    *   - Textarea como input real (typing, copy, paste, accesibilidad)
    *   - <pre> debajo con el texto tokenizado por highlight.js
    *   - Tab key inserta 2 spaces
-   *   - Scroll sincronizado entre textarea y pre
+   *   - Scroll sincronizado entre textarea, pre y numbers gutter (B7)
    *   - Debounce 200ms en highlight (typing fluido)
    *   - Push al history externo con debounce 500ms (B6)
    *   - undo() / redo() exposed via callbacks al padre (B6)
+   *   - Line numbers a la izquierda con current line highlight (B7)
    *
    * El history vive en el padre (HtmlPlayground) y se pasa como prop.
-   * Asi el padre coordina los atajos globales (Cmd+Z afecta al panel
-   * con focus) y el undo/redo entre paneles si quiere.
+   *
+   * Layout (B7):
+   *   ┌──────┬──────────────────┐
+   *   │ nums │ editor (pre+textarea)
+   *   │ gutter│  absolutos dentro│
+   *   └──────┴──────────────────┘
    *
    * Limitaciones conocidas:
    *   - Seleccion del textarea NO se ve como color de fondo en el
    *     highlight (texto transparente). Aceptable para playground educativo.
+   *   - Si el archivo tiene >5000 lineas, renderizar 5000 divs seria lento.
+   *     Por eso usamos un unico <pre> con los numeros como texto plano.
    */
   import { onMount, onDestroy } from 'svelte'
   import hljs from 'highlight.js/lib/core'
@@ -27,11 +34,10 @@
   import 'highlight.js/styles/github-dark.css'
   import type { EditorHistory } from '../lib/editor-history'
 
-  // Registrar solo los lenguajes que necesitamos (reduce bundle ~50KB → ~30KB)
   hljs.registerLanguage('javascript', javascript)
-  hljs.registerLanguage('xml', xml) // HTML usa xml segun hljs
+  hljs.registerLanguage('xml', xml)
   hljs.registerLanguage('css', css)
-  hljs.registerLanguage('html', xml) // alias
+  hljs.registerLanguage('html', xml)
 
   interface Props {
     value: string
@@ -40,9 +46,9 @@
     panel?: 'html' | 'css' | 'js'
     /** History externo (B6). Si se pasa, se hace push debounced. */
     history?: EditorHistory | null
-    /** Callback cuando el editor recibe focus. Usado por el padre para los atajos. */
+    /** Callback cuando el editor recibe focus. */
     onFocus?: () => void
-    /** Callback cuando cambia canUndo/canRedo (B6). Para habilitar/deshabilitar botones. */
+    /** Callback cuando cambia canUndo/canRedo (B6). */
     onHistoryChange?: (canUndo: boolean, canRedo: boolean) => void
   }
 
@@ -56,16 +62,39 @@
     onHistoryChange,
   }: Props = $props()
 
-  // Tokenized output para el <pre>
+  // B7: derived state
+  let lineCount = $derived(Math.max(1, value.split('\n').length))
+  let currentLine = $state(1)
+  let selectionStart = $state(0)
+
+  // Estado de highlight
   let highlighted = $state('')
   let highlightTimer: ReturnType<typeof setTimeout> | null = null
   let historyTimer: ReturnType<typeof setTimeout> | null = null
 
-  // Refs para sincronizar scroll
+  // Refs
   let textareaEl: HTMLTextAreaElement | null = $state(null)
   let preEl: HTMLPreElement | null = $state(null)
+  let numbersEl: HTMLPreElement | null = $state(null)
 
-  // Estado de undo/redo expuesto al padre (B6)
+  // B7: precomputamos el texto de numeros como un solo string.
+  // "1\n2\n3\n...\nN\n" — agregar newline final para que la ultima
+  // linea tenga la misma altura que el textarea (que tambien tiene newline
+  // explicito al final del highlighted).
+  let numbersText = $derived(
+    Array.from({ length: lineCount }, (_, i) => i + 1).join('\n') + '\n'
+  )
+
+  // B7: numero a resaltar (currentLine)
+  function recomputeCurrentLine() {
+    if (!textareaEl) return
+    const pos = textareaEl.selectionStart ?? 0
+    selectionStart = pos
+    const before = value.substring(0, pos)
+    currentLine = before.split('\n').length
+  }
+
+  // B6: estado undo/redo
   let canUndoState = $state(false)
   let canRedoState = $state(false)
 
@@ -101,11 +130,6 @@
     highlightTimer = setTimeout(recomputeHighlight, 200)
   }
 
-  /**
-   * Push al history con debounce 500ms. Asi un typing rapido genera
-   * una sola entry, no una por letra. Tambien push en blur para
-   * capturar el estado final cuando el usuario cambia de panel.
-   */
   function scheduleHistoryPush() {
     if (!history) return
     if (historyTimer) clearTimeout(historyTimer)
@@ -115,7 +139,6 @@
     }, 500)
   }
 
-  // Push inmediato al history (sin debounce) para acciones discretas.
   function pushHistoryNow() {
     if (!history) return
     if (historyTimer) clearTimeout(historyTimer)
@@ -123,15 +146,14 @@
     updateHistoryState()
   }
 
-  // Metodos undo/redo (B6). El padre los invoca via callbacks cuando
-  // detecta Cmd/Ctrl+Z o Cmd/Ctrl+Shift+Z en un listener global.
-  // Tambien expone via export para los botones undo/redo del header.
   export function undo() {
     if (!history) return
     const prev = history.undo()
     updateHistoryState()
     if (prev !== null) {
       value = prev
+      // Recalcular currentLine despues del cambio
+      queueMicrotask(recomputeCurrentLine)
     }
   }
 
@@ -141,6 +163,7 @@
     updateHistoryState()
     if (next !== null) {
       value = next
+      queueMicrotask(recomputeCurrentLine)
     }
   }
 
@@ -151,21 +174,25 @@
     scheduleHighlight()
   })
 
-  // Push al history cuando cambia value (con debounce)
+  // Push al history cuando cambia value
   $effect(() => {
     void value
     if (!history) return
     scheduleHistoryPush()
   })
 
-  // Sincronizar scroll del pre con el textarea
+  // B7: sincronizar scroll de numbers y pre con el textarea
   function handleScroll() {
-    if (!textareaEl || !preEl) return
-    preEl.scrollTop = textareaEl.scrollTop
-    preEl.scrollLeft = textareaEl.scrollLeft
+    if (!textareaEl) return
+    if (preEl) {
+      preEl.scrollTop = textareaEl.scrollTop
+      preEl.scrollLeft = textareaEl.scrollLeft
+    }
+    if (numbersEl) {
+      numbersEl.scrollTop = textareaEl.scrollTop
+    }
   }
 
-  // Tab key + atajos undo/redo (B6)
   function handleKeydown(ev: KeyboardEvent) {
     // Tab inserta 2 spaces
     if (ev.key === 'Tab' && textareaEl) {
@@ -177,9 +204,10 @@
       queueMicrotask(() => {
         if (textareaEl) {
           textareaEl.selectionStart = textareaEl.selectionEnd = start + insert.length
+          recomputeCurrentLine()
         }
       })
-      pushHistoryNow() // tab es accion discreta
+      pushHistoryNow()
       return
     }
 
@@ -201,8 +229,6 @@
   }
 
   function handleBlur() {
-    // Flush del debounce para que el estado quede persistido en history
-    // antes de que el usuario cambie de panel o haga Cmd+Z en otro.
     if (historyTimer) {
       clearTimeout(historyTimer)
       historyTimer = null
@@ -215,12 +241,36 @@
 
   function handleFocusInternal() {
     onFocus?.()
+    // Recalcular current line al recibir focus
+    queueMicrotask(recomputeCurrentLine)
   }
+
+  // B7: cuando cambia selectionStart (cursor), recalcular currentLine.
+  // Usamos un effect que depende de selectionStart.
+  $effect(() => {
+    void selectionStart
+    // currentLine ya se setea dentro de recomputeCurrentLine,
+    // pero necesitamos reactividad. La funcion se llama en handlers,
+    // asi que este effect no hace nada en si.
+  })
+
+  // B7: listener de selectionchange a nivel document para capturar
+  // el cambio de cursor sin importar como se hizo (click, key, etc).
+  $effect(() => {
+    if (typeof document === 'undefined') return
+    function onSelChange() {
+      if (document.activeElement === textareaEl) {
+        recomputeCurrentLine()
+      }
+    }
+    document.addEventListener('selectionchange', onSelChange)
+    return () => document.removeEventListener('selectionchange', onSelChange)
+  })
 
   onMount(() => {
     recomputeHighlight()
-    // Inicializa estado de history
     updateHistoryState()
+    recomputeCurrentLine()
   })
 
   onDestroy(() => {
@@ -230,24 +280,39 @@
 </script>
 
 <div class="code-editor" data-panel={panel}>
-  <pre
-    bind:this={preEl}
-    class="hljs language-{language} highlight-overlay"
-    aria-hidden="true"
-  >{@html highlighted}</pre>
-  <textarea
-    bind:this={textareaEl}
-    bind:value
-    onscroll={handleScroll}
-    onkeydown={handleKeydown}
-    onblur={handleBlur}
-    onfocus={handleFocusInternal}
-    spellcheck="false"
-    autocapitalize="off"
-    autocorrect="off"
-    autocomplete="off"
-    aria-label={ariaLabel}
-  ></textarea>
+  <!-- B7: Line numbers gutter (a la izquierda) -->
+  <div class="gutter" aria-hidden="true">
+    <pre
+      bind:this={numbersEl}
+      class="line-numbers"
+      class:has-current={currentLine >= 1}
+      style="--current-line: {currentLine};"
+    >{numbersText}</pre>
+  </div>
+
+  <!-- Editor: textarea + highlight overlay absolutos -->
+  <div class="editor-pane">
+    <pre
+      bind:this={preEl}
+      class="hljs language-{language} highlight-overlay"
+      aria-hidden="true"
+    >{@html highlighted}</pre>
+    <textarea
+      bind:this={textareaEl}
+      bind:value
+      onscroll={handleScroll}
+      onkeydown={handleKeydown}
+      onblur={handleBlur}
+      onfocus={handleFocusInternal}
+      onclick={recomputeCurrentLine}
+      onkeyup={recomputeCurrentLine}
+      spellcheck="false"
+      autocapitalize="off"
+      autocorrect="off"
+      autocomplete="off"
+      aria-label={ariaLabel}
+    ></textarea>
+  </div>
 </div>
 
 <style>
@@ -256,10 +321,61 @@
     flex: 1;
     display: flex;
     min-height: 0;
+    background: var(--pg-bg, #1e1e1e);
+  }
+
+  /* B7: gutter de numeros */
+  .gutter {
+    flex: 0 0 auto;
+    width: 3ch;
+    padding: 0.6rem 0.4rem 0.6rem 0.6rem;
+    background: var(--pg-bg, #1e1e1e);
+    border-right: 1px solid var(--pg-border, #3f3f46);
+    overflow: hidden;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .line-numbers {
+    /* Mismas propiedades que el editor para alineamiento perfecto */
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0;
+    border: 0;
+    white-space: pre;
+    word-wrap: normal;
+    overflow: hidden;
+
+    color: #6a737d;
+    text-align: right;
+    background: transparent;
+  }
+
+  /* B7: highlight de current line via gradiente — trick para no renderizar
+     N divs. Limitacion: solo resalta si el viewport alcanza esa linea. */
+  .line-numbers.has-current {
+    background: linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc((var(--current-line) - 1) * 1lh),
+      rgba(217, 119, 6, 0.12) calc((var(--current-line) - 1) * 1lh),
+      rgba(217, 119, 6, 0.12) calc(var(--current-line) * 1lh),
+      transparent calc(var(--current-line) * 1lh)
+    );
+  }
+
+  /* Editor pane: contiene pre + textarea absolutos */
+  .editor-pane {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .highlight-overlay,
-  textarea {
+  .editor-pane textarea {
+    /* Mismas propiedades para alineamiento pixel-perfect */
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 0.85rem;
     line-height: 1.5;
@@ -286,7 +402,7 @@
     z-index: 1;
   }
 
-  textarea {
+  .editor-pane textarea {
     color: transparent;
     caret-color: var(--pg-fg, #e4e4f7);
     background: transparent;
@@ -295,14 +411,23 @@
     z-index: 2;
   }
 
-  textarea::selection {
+  .editor-pane textarea::selection {
     background: rgba(217, 119, 6, 0.35);
   }
 
-  textarea:focus {
+  .editor-pane textarea:focus {
     background: transparent;
   }
 
+  /* Sync scrollbar: escondemos el del highlight para que solo se vea el del textarea */
+  .highlight-overlay::-webkit-scrollbar {
+    display: none;
+  }
+  .highlight-overlay {
+    scrollbar-width: none;
+  }
+
+  /* Tema dark de highlight.js */
   :global(.hljs) {
     background: transparent !important;
     color: #e4e4e7;
