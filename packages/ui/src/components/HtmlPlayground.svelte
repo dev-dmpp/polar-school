@@ -27,6 +27,7 @@
     clearDraft,
     formatSavedAgo,
   } from '../lib/playground-storage'
+  import CodeEditor from './CodeEditor.svelte'
 
   interface Props {
     initialHtml?: string
@@ -287,12 +288,12 @@ boton?.addEventListener('click', () => {
           {copyState === 'html' ? '✓ Copiado' : 'Copiar'}
         </button>
       </div>
-      <textarea
+      <CodeEditor
         bind:value={html}
-        spellcheck="false"
-        aria-label="Editor HTML"
-        data-panel="html"
-      ></textarea>
+        language="html"
+        ariaLabel="Editor HTML"
+        panel="html"
+      />
     </div>
 
     <div class="pane">
@@ -302,12 +303,12 @@ boton?.addEventListener('click', () => {
           {copyState === 'css' ? '✓ Copiado' : 'Copiar'}
         </button>
       </div>
-      <textarea
+      <CodeEditor
         bind:value={css}
-        spellcheck="false"
-        aria-label="Editor CSS"
-        data-panel="css"
-      ></textarea>
+        language="css"
+        ariaLabel="Editor CSS"
+        panel="css"
+      />
     </div>
 
     <div class="pane">
@@ -317,12 +318,12 @@ boton?.addEventListener('click', () => {
           {copyState === 'js' ? '✓ Copiado' : 'Copiar'}
         </button>
       </div>
-      <textarea
+      <CodeEditor
         bind:value={js}
-        spellcheck="false"
-        aria-label="Editor JavaScript"
-        data-panel="js"
-      ></textarea>
+        language="javascript"
+        ariaLabel="Editor JavaScript"
+        panel="js"
+      />
     </div>
 
     <div class="pane preview">
@@ -430,21 +431,9 @@ boton?.addEventListener('click', () => {
     letter-spacing: 0.04em;
   }
 
-  textarea {
+  textarea,
+  :global(.code-editor) {
     flex: 1;
-    width: 100%;
-    border: 0;
-    background: var(--pg-bg);
-    color: var(--pg-fg);
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.85rem;
-    line-height: 1.5;
-    padding: 0.6rem 0.8rem;
-    resize: vertical;
-    outline: none;
-  }
-  textarea:focus {
-    background: #18181b;
   }
 
   iframe {
