@@ -234,7 +234,7 @@
     bind:this={preEl}
     class="hljs language-{language} highlight-overlay"
     aria-hidden="true"
-  >{highlighted}</pre>
+  >{@html highlighted}</pre>
   <textarea
     bind:this={textareaEl}
     bind:value
